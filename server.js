@@ -1,0 +1,221 @@
+require('dotenv').config();
+const express = require('express');
+const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core');
+const { ApolloServer } = require('apollo-server-express');
+const path = require('path');
+var cors = require('cors');
+const { typeDefs, resolvers, permissions } = require('./schemas');
+const { authMiddleware } = require('./utils/auth');
+const db = require('./config/connection');
+const jwt = require('jsonwebtoken');
+const { handleIncomingMessage, handleDecision, handleCustomUserInput } = require('./components/GPT/GPT_Generate_Scene');
+const { Query_Candidate } = require('./components/Query_Candidate');
+const { Riley, Magnus, Rena } = require('./components/character_profile/character');
+const { deliverPlot } = require('./components/plot');
+const axios = require('axios');
+
+const PORT = process.env.PORT || 3001;
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  introspection: process.env.NODE_ENV !== 'production',
+  formatError: (err) => {
+    // Don't give the specific errors to the client
+    if (err.message.startsWith('Database Error: ')) {
+      return new Error('Internal server error');
+    }
+    // Otherwise return the original error
+    return err;
+  },
+  csrfPrevention: true,
+  cache: 'bounded',
+  plugins: [
+    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
+  ],
+  context: authMiddleware
+});
+
+const app = express();
+app.use(cors())
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+const validateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (token == null) return res.sendStatus(401); // Unauthorized
+
+  jwt.verify(token, `${process.env.REACT_APP_SECRET}`, (err, user) => {
+    if (err) return res.sendStatus(403); // Forbidden
+    req.user = user;
+    next();
+  });
+}
+
+app.get('/protected-route', validateToken, (req, res) => {
+  // The request is authenticated. Send the protected data.
+  res.send({ data: 'protected data' });
+});
+
+app.get('/ping', (req, res) => {
+  res.send({ data: 'Success' })
+})
+
+app.post('/query-usda/:prompt', (req, res) => {
+  const userInput = req.params.prompt;
+  let userInputParsed = JSON.parse(decodeURIComponent(userInput));
+  console.log(userInputParsed)
+
+  axios.get(`https://api.nal.usda.gov/fdc/v1/search?api_key=${process.env.USDA_API_KEY}&generalSearchInput=${userInputParsed.search}&pageSize=20&fields=description,labelNutrients`)
+    .then((response) => {
+      const foods = response.data.foods
+        .filter((food) => food.description && food.description.trim().length > 0)
+        .reduce((uniqueFoods, food) => {
+          const formattedDescription = food.description
+            .toLowerCase()
+            .replace(/\b\w/g, (l) => l.toUpperCase());
+          if (
+            !uniqueFoods.find(
+              (uniqueFood) => uniqueFood.description === formattedDescription
+            )
+          ) {
+            uniqueFoods.push({
+              fdcId: food.fdcId,
+              description: formattedDescription,
+            });
+          }
+          return uniqueFoods;
+        }, []);
+
+        res.status(200).json({ result: foods });
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  
+})
+
+
+// app.post(`/api/npc/:prompt`, async (req, res) => {
+//   console.log("# - STEP 1")
+
+//   const userInput = req.params.prompt;
+//   let userInputParsed = JSON.parse(decodeURIComponent(userInput));
+//   let checkValue = parseInt(userInputParsed.value);
+
+//   console.log("# - USER INPUT:");
+//   console.log(userInputParsed)
+
+//   let supplementalData = { candidate: '' };
+
+//   async function logSupplementalData() {
+//     try {
+//       const candidate = await Query_Candidate(req.headers.authorization);
+//       const supplementalData = { candidate: candidate.replace(/['"]/g, '') };
+//       return supplementalData;
+//     } catch (error) {
+//       console.error('Error retrieving candidate:', error);
+//     }
+//   }
+
+//   async function updatedSupplementalData() {
+//     const result = await logSupplementalData();
+//     return Promise.resolve(result)
+//       .then(result => {
+//         console.log("# - UPDATE SUPPLEMENTAL DATA")
+//         if (result.candidate === "Riley") {
+//           return Riley.find(data => data.id === 1);
+//         } else if (result.candidate === "Magnus") {
+//           return Magnus.find(data => data.id === 1)
+//         } else if (result.candidate === "Rena") {
+//           return Rena.find(data => data.id === 1)
+//         } else {
+//           console.log("# ERROR - Candidate not found");
+//         }
+//       })
+//       .catch(error => {
+//         console.error(error);
+//         return null; // or throw an error, depending on your use case
+//       });
+//   }
+
+//   supplementalData = await updatedSupplementalData();
+//   console.log("# - SUPPLEMENTAL DATA:")
+//   console.log(supplementalData)
+
+//   // const plot = deliverPlot(supplementalData)
+//   // const scene = plot.find(scene => scene.id === 2);
+//   // console.log(scene.text)
+
+
+//   if (!res.headersSent && checkValue.toString() != userInputParsed.value) { 
+//     if (userInputParsed.value.toLowerCase() == 'start_npc_ai') {
+//       console.log("# - STEP 2 A")
+//       async function main() {
+//         const response = await handleIncomingMessage(userInputParsed, supplementalData);
+//         console.log("# - DELIVER RESPONSE (A)")
+
+//         // console.log(response);
+//         res.status(200).json({ result: response });
+//       }
+//       main();
+//     } else {
+//       console.log("# - STEP 2 C")
+//       async function main() {
+//         const response = await handleCustomUserInput(userInputParsed, supplementalData);
+//         console.log("# - DELIVER RESPONSE (C)")
+
+//         console.log(response);
+//         res.status(200).json({ result: response });
+//       }
+//       main();
+//     }
+
+//   } else if (!res.headersSent && checkValue.toString() == userInputParsed.value) {
+//     console.log("# - STEP 2 B")
+//     async function main() {
+//       const response = await handleDecision(userInputParsed.value, supplementalData);
+//       console.log("# - DELIVER RESPONSE (B)")
+
+//       // console.log(response);
+//       res.status(200).json({ result: response });
+//     }
+//     main();
+//   }
+// });
+
+// Create a new instance of an Apollo server with the GraphQL schema
+const startApolloServer = async (typeDefs, resolvers) => {
+  await server.start();
+  server.applyMiddleware({ app });
+
+  // Serve up static assets
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/build')));
+  }
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+
+  db.once('open', () => {
+    app.listen(PORT, () => {
+      console.log(`API server running on port ${PORT}!`);
+      console.log(`Use GraphQL at http://192.168.1.198:${PORT}${server.graphqlPath}`);
+    })
+  })
+};
+
+// Call the async function to start the server
+startApolloServer(typeDefs, resolvers);
+
