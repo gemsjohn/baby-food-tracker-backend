@@ -9,12 +9,10 @@ const typeDefs = gql`
     role: [String]
     username: String
     email: String
-    story: [Story]
+    tracker: [Tracker]
     resetToken: String
     resetTokenExpiry: String
     currentVersion: String
-    candidate: String
-    storySummary: String
     tokens: String
   }
 
@@ -23,24 +21,27 @@ const typeDefs = gql`
     user: User
   }
 
-  type Story {
+  type Tracker {
     _id: ID,
-    userid: String
-    chat: [Chat]
+    date: String
+    entry: [Entry]
   }
 
-  type Chat {
+  type Entry {
     _id: String
-    npc: String
-    user: String
-  }
+    date: String
+    schedule: String
+    item: String
+    amount: String
+    nutrients: String
 
+  }
 
   type Query {
     me: User
     users(echo: String): [User]
     user(_id: ID!): User
-    stories(echo: String): [Story]
+    trackers(echo: String): [Tracker]
   }
 
   type Mutation {
@@ -53,7 +54,7 @@ const typeDefs = gql`
       role: [String!],
       username: String!, 
       email: String!,
-      story: String
+      tracker: String
       password: String!,
       tokens: String
     ): Auth
@@ -76,10 +77,6 @@ const typeDefs = gql`
       password: String
     ): User
 
-    updateStoryContent(
-      candidate: String,
-    ): User
-
     requestReset(
       email: String
     ): User
@@ -91,11 +88,13 @@ const typeDefs = gql`
       resetToken: String
     ): User
 
-    addChat(
-      chapter: String
-      npc: String
-      user: String
-    ): Chat
+    addEntry(
+      date: String
+      schedule: String
+      item: String
+      amount: String
+      nutrients: String
+    ): Entry
     
     deleteStory(id: ID!, echo: String): String
   }

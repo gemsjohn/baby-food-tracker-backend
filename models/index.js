@@ -1,5 +1,5 @@
 const User = require('./User');
-const Story = require('./Story');
-const Chat = require('./Chat')
+const Tracker = require('./Tracker');
+const Entry = require('./Entry')
 
-module.exports = { User, Story, Chat };
+module.exports = { User, Tracker, Entry };

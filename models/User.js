@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
 const bcrypt = require('bcrypt');
 
-const Story = require('./Story').schema;
+const Tracker = require('./Tracker').schema;
 
 
 const UserSchema = new Schema(
@@ -25,7 +25,7 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
-    story: [Story],
+    tracker: [Tracker],
     resetToken: {
       type: String,
     },
@@ -35,12 +35,6 @@ const UserSchema = new Schema(
     currentVersion: {
       type: String,
       default: '1.0.0'
-    },
-    candidate: {
-      type: String
-    },
-    storySummary: {
-      type: String
     },
     tokens: {
       type: String

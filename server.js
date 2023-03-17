@@ -8,10 +8,7 @@ const { typeDefs, resolvers, permissions } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
 const db = require('./config/connection');
 const jwt = require('jsonwebtoken');
-const { handleIncomingMessage, handleDecision, handleCustomUserInput } = require('./components/GPT/GPT_Generate_Scene');
-const { Query_Candidate } = require('./components/Query_Candidate');
-const { Riley, Magnus, Rena } = require('./components/character_profile/character');
-const { deliverPlot } = require('./components/plot');
+const { handleIncomingMessage } = require('./components/GPT/GPT_Generate_Scene');
 const axios = require('axios');
 
 const PORT = process.env.PORT || 3001;
@@ -68,6 +65,7 @@ app.get('/protected-route', validateToken, (req, res) => {
 });
 
 app.get('/ping', (req, res) => {
+  console.log("ping")
   res.send({ data: 'Success' })
 })
 
@@ -106,93 +104,29 @@ app.post('/query-usda/:prompt', (req, res) => {
 })
 
 
-// app.post(`/api/npc/:prompt`, async (req, res) => {
-//   console.log("# - STEP 1")
+app.post(`/api/npc/:prompt`, async (req, res) => {
+  console.log("# - STEP 1")
 
-//   const userInput = req.params.prompt;
-//   let userInputParsed = JSON.parse(decodeURIComponent(userInput));
-//   let checkValue = parseInt(userInputParsed.value);
+  const userInput = req.params.prompt;
+  let userInputParsed = JSON.parse(decodeURIComponent(userInput));
 
-//   console.log("# - USER INPUT:");
-//   console.log(userInputParsed)
+  console.log("# - USER INPUT:");
+  console.log(userInputParsed)
 
-//   let supplementalData = { candidate: '' };
+  if (!res.headersSent && userInputParsed.search.description != '') { 
+      console.log("# - MAIN")
+      async function main() {
+        const response = await handleIncomingMessage(userInputParsed);
+        
 
-//   async function logSupplementalData() {
-//     try {
-//       const candidate = await Query_Candidate(req.headers.authorization);
-//       const supplementalData = { candidate: candidate.replace(/['"]/g, '') };
-//       return supplementalData;
-//     } catch (error) {
-//       console.error('Error retrieving candidate:', error);
-//     }
-//   }
+        
+        console.log(response)
+        res.status(200).json({ result: response });
+      }
+      main();
+  }
 
-//   async function updatedSupplementalData() {
-//     const result = await logSupplementalData();
-//     return Promise.resolve(result)
-//       .then(result => {
-//         console.log("# - UPDATE SUPPLEMENTAL DATA")
-//         if (result.candidate === "Riley") {
-//           return Riley.find(data => data.id === 1);
-//         } else if (result.candidate === "Magnus") {
-//           return Magnus.find(data => data.id === 1)
-//         } else if (result.candidate === "Rena") {
-//           return Rena.find(data => data.id === 1)
-//         } else {
-//           console.log("# ERROR - Candidate not found");
-//         }
-//       })
-//       .catch(error => {
-//         console.error(error);
-//         return null; // or throw an error, depending on your use case
-//       });
-//   }
-
-//   supplementalData = await updatedSupplementalData();
-//   console.log("# - SUPPLEMENTAL DATA:")
-//   console.log(supplementalData)
-
-//   // const plot = deliverPlot(supplementalData)
-//   // const scene = plot.find(scene => scene.id === 2);
-//   // console.log(scene.text)
-
-
-//   if (!res.headersSent && checkValue.toString() != userInputParsed.value) { 
-//     if (userInputParsed.value.toLowerCase() == 'start_npc_ai') {
-//       console.log("# - STEP 2 A")
-//       async function main() {
-//         const response = await handleIncomingMessage(userInputParsed, supplementalData);
-//         console.log("# - DELIVER RESPONSE (A)")
-
-//         // console.log(response);
-//         res.status(200).json({ result: response });
-//       }
-//       main();
-//     } else {
-//       console.log("# - STEP 2 C")
-//       async function main() {
-//         const response = await handleCustomUserInput(userInputParsed, supplementalData);
-//         console.log("# - DELIVER RESPONSE (C)")
-
-//         console.log(response);
-//         res.status(200).json({ result: response });
-//       }
-//       main();
-//     }
-
-//   } else if (!res.headersSent && checkValue.toString() == userInputParsed.value) {
-//     console.log("# - STEP 2 B")
-//     async function main() {
-//       const response = await handleDecision(userInputParsed.value, supplementalData);
-//       console.log("# - DELIVER RESPONSE (B)")
-
-//       // console.log(response);
-//       res.status(200).json({ result: response });
-//     }
-//     main();
-//   }
-// });
+});
 
 // Create a new instance of an Apollo server with the GraphQL schema
 const startApolloServer = async (typeDefs, resolvers) => {

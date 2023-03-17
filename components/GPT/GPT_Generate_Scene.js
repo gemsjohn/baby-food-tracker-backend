@@ -1,76 +1,73 @@
-const { deliverPlot } = require('../plot');
-const { GPT_Scene_Description } = require('./GPT_Scene_Description');
-const { GPT_Input_Response } = require('./GPT_Input_Response');
+require('dotenv').config()
+const axios = require('axios');
 
-async function handleIncomingMessage(input, supplementalData) {
+let apiKey = process.env.OPENAI_API_KEY;
+
+async function handleIncomingMessage(input) {
+    console.log("# - STEP 2 A")
+    const response = await generateInitialSceenDescription(input);
+    return response;
+  }
+
+
+async function generateInitialSceenDescription(input) {
     console.log("# - STEP 3 A")
-    const response = await generateInitialSceenDescription(input, supplementalData);
-    return response;
-  }
-  
-  async function handleDecision(input, supplementalData) {
-    console.log("# - STEP 3 B")
-    const response = await generateSubsequentScene(input, supplementalData);
-    return response;
-  }
-  
-  async function handleCustomUserInput(input, supplementalData) {
-    console.log("# - STEP 3 C")
-    const response = await generateResponseToCustomUserInput(input, supplementalData);
-    return response;
-  }
-
-async function generateInitialSceenDescription(input, supplementalData) {
-    console.log("# - STEP 5 A")
-    const plot = deliverPlot(supplementalData)
-    const scene = plot.find(scene => scene.id === 1);
-    const response = await GPT_Scene_Description(scene.text, scene.goal, scene.decision, scene.options)
-
-    let content = {
-        "res": response.content,
-        "sceneID": 1,
-        "decision": scene.decision,
-        "options": scene.options
-
-    }
-    // Return the generated narrative description
-    return content;
-}
-
-async function generateSubsequentScene(input, supplementalData) {
-    console.log("# - STEP 5 B")
     console.log(input)
-    const plot = deliverPlot(supplementalData)
-    const scene = plot.find(scene => scene.id === input);
-    const response = await GPT_Scene_Description(scene.text, scene.goal, scene.decision, scene.options)
+    try {
+        let data = JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [
+                { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
+                { "role": "user", "content": `Can you provide the nutritional values for ${input.search.description} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
+            ],
+            max_tokens: 100
+        });
 
-    let content = {
-        "res": response.content,
-        "sceneID": input,
-        "decision": scene.decision,
-        "options": scene.options,
+        let config = {
+            method: 'post',
+            url: 'https://api.openai.com/v1/chat/completions',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            data: data
+        };
+        let completion = await axios(config)
+            .then(function (response) {
+                // console.log(JSON.stringify(response.data));
+                let output = response.data.choices[0].message;
+                console.log("# - STEP 4 A")
+                console.log(output)
+
+                function extractNutrients(text) {
+                    const nutrientRegex = /(\bCalories\b|\bFat\b|\bSaturated Fat\b|\bCholesterol\b|\bSodium\b|\bPotassium\b|\bProtein\b|\bCarbohydrates\b|\bDietary Fiber\b|\bFiber\b|\bSugar\b|\bVitamin|\bZinc|\bIron|\bOmega [A-Z]+\b)\s*:?\s*([\d\.]+)\s*(g|mg|%|IU)?/g;
+                    const matches = text.matchAll(nutrientRegex);
+                    const nutrients = {};
+                    
+                    for (const match of matches) {
+                      const name = match[1].toLowerCase().replace(/\s+/g, '_');
+                      const amount = parseFloat(match[2]);
+                      const unit = match[3] ? match[3] : '';
+                      
+                      nutrients[name] = { amount, unit };
+                    }
+                    // console.log(nutrients)
+                    return nutrients;
+                }
+
+                let nutritionFacts = extractNutrients(output.content);
+                
+                return nutritionFacts;
+            })
+            .catch(function (error) {
+                console.log(error, 'error in calling chat completion');
+            });
+        return completion
+    } catch (e) {
+        console.log(e, ' error in the callChatGTP function')
     }
-    // Return the generated narrative description
-    return content;
 }
 
-async function generateResponseToCustomUserInput(input, supplementalData) {
-    console.log("# - STEP 5 C")
-    console.log(input)
-    const plot = deliverPlot(supplementalData)
-    const scene = plot.find(scene => scene.id === input.currentSceneID);
-    const response = await GPT_Input_Response(scene.text, scene.goal, scene.decision, scene.options, input.value)
 
-    let content = {
-        "res": response.content,
-        "sceneID": input.currentSceneID,
-        "decision": '',
-        "options": [{ text: "Continue...", nextId: scene.nextId }]
 
-    }
-    // Return the generated narrative description
-    return content;
-
-}
-
-module.exports = { handleIncomingMessage, handleDecision, handleCustomUserInput }
+module.exports = { handleIncomingMessage }

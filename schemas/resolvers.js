@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { AuthenticationError } = require('apollo-server-express');
-const { User, Story, Chat } = require("../models");
+const { User, Tracker, Entry } = require("../models");
 const { signToken, clearToken } = require('../utils/auth');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
@@ -42,13 +42,13 @@ const resolvers = {
         return User.findOne({ _id: args._id })
       }
     },
-    stories: async (parent, args, context) => {
+    trackers: async (parent, args, context) => {
       const saltRounds = 10;
       const hash = await bcrypt.hash(args.echo, saltRounds);
 
       if (await bcrypt.compare(process.env.ACCESS_PASSWORD, hash)) {
         if (context.user.role[0] === 'Admin') {
-          return Story.find()
+          return Tracker.find()
         }
       } else {
         return null;
@@ -90,7 +90,7 @@ const resolvers = {
           email: filteredEmail,
           username: filteredUsername,
           password: args.password,
-          story: [],
+          tracker: [],
           tokens: 1,
         }
       );
@@ -161,31 +161,6 @@ const resolvers = {
 
       // throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     },
-    updateStoryContent: async (parents, args, context) => {
-      try {
-        if (!context.user) {
-          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
-        }
-
-        const user = await User.findById({ _id: context.user._id })
-        if (!user) {
-          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
-        }
-        console.log(args)
-
-        if (context.user) {
-          await User.findByIdAndUpdate(
-            { _id: context.user._id },
-            {
-              candidate: args.candidate,
-            },
-            { new: true }
-          )
-        }
-      } catch (err) {
-        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
-      }
-    },
     updateTokenCount: async (parents, args, context) => {
       try {
         if (!context.user) {
@@ -226,7 +201,7 @@ const resolvers = {
 
         console.log("updateTokenCount")
         if (user.tokens > 0 && args.remove == "true") {
-        console.log("#8")
+          console.log("#8")
 
           await User.findByIdAndUpdate(
             { _id: args.userid },
@@ -237,7 +212,7 @@ const resolvers = {
           )
         }
         if (args.add == "true" && Number(args.amount) > 0) {
-        console.log("#9")
+          console.log("#9")
 
           const updateTokens = Number(user.tokens) + Number(args.amount);
           console.log(args.add)
@@ -256,84 +231,54 @@ const resolvers = {
 
       // throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     },
-    addChat: async (parent, args, context) => {
+    addEntry: async (parent, args, context) => {
       const user = await User.findById({ _id: context.user._id })
       if (!user) {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
       }
 
-      if (!args.npc || !args.user) {
+      if (!args.date || !args.schedule || !args.item || !args.amount || !args.nutrients) {
         throw new Error('Missing required fields');
       }
 
-      if (user.story[args.chapter] == null) {
+      console.log("mutation/addEntry/new_entry")
+      const entry = new Entry({
+        date: args.date,
+        schedule: args.schedule,
+        item: args.item,
+        amount: args.amount,
+        nutrients: args.nutrients
+      });
+      await entry.save();
 
-        console.log("mutation/addChat/new_chat")
-        const chat = new Chat({
-          npc: args.npc,
-          user: args.user
-        });
-        await chat.save();
+
+      const tracker = new Tracker({
+        date: args.date,
+        entry: entry
+      });
+      await tracker.save();
+
+      await User.findByIdAndUpdate(
+        { _id: user._id },
+        {
+          $push: {
+            tracker: tracker
+          }
+        },
+        { new: true }
+      )
+
+      
+      // // [[[[CLEAR!!!!!]]]]
+      // await User.findByIdAndUpdate(
+      //   { _id: user._id },
+      //   {
+      //     tracker: []
+      //   },
+      //   { new: true }
+      // )
 
 
-        const story = new Story({
-          userid: user._id,
-          chat: chat
-        });
-        await story.save();
-
-        await User.findByIdAndUpdate(
-          { _id: user._id },
-          {
-            $push: {
-              story: story
-            }
-          },
-          { new: true }
-        )
-      } else if (user.story[args.chapter] != null) {
-        console.log("mutation/addChat/existing_chat")
-        console.log(args.chapter)
-        // await User.findByIdAndUpdate(
-        //   {_id: context.user._id},
-        //   {
-        //     story: []
-        //   },
-        //   { new: true }
-        // )
-
-        const chat = new Chat({
-          npc: args.npc,
-          user: args.user
-        });
-        await chat.save();
-
-        let storyID = user.story[args.chapter]._id;
-        console.log(storyID)
-
-        console.log("mutation/addChat/existing_chat/push_chat")
-        const story = await Story.findByIdAndUpdate(
-          { _id: storyID },
-          {
-            
-            $push: {
-              chat: chat
-            }
-          },
-          { new: true }
-        )
-
-        console.log("mutation/addChat/existing_chat/update_user")
-        await User.findOneAndUpdate(
-          { _id: user._id, "story._id": storyID },
-          {
-              "story.$": story,
-            
-          },
-          { new: true }
-        );
-
-      }
       return {};
     },
 
@@ -521,8 +466,8 @@ const resolvers = {
         if (context.user._id == args.id || context.user.role[0] == 'Admin') {
           const user = await User.findOne({ _id: args.id })
 
-          for (let i = 0; i < user.story.length; i++) {
-            await Story.findByIdAndDelete({ _id: user.story[i]._id })
+          for (let i = 0; i < user.tracker.length; i++) {
+            await Tracker.findByIdAndDelete({ _id: user.tracker[i]._id })
           }
 
           await User.findByIdAndDelete({ _id: args.id })
