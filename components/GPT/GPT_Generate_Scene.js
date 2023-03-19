@@ -79,8 +79,6 @@ async function generateInitialSceenDescription(input) {
             messages: [
                 { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
                 { "role": "user", "content": `Can you provide the nutritional values for ${input.search.description} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
-                { "role": "user", "content": `1 serving of ${input.search.description} = ` },
-
             ],
             max_tokens: 100
         });
