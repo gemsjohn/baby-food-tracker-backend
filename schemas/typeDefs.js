@@ -16,6 +16,12 @@ const typeDefs = gql`
     tokens: String
   }
 
+  type Food {
+    _id: ID
+    item: String
+    nutrients: String
+  }
+
   type Auth {
     token: ID!
     user: User
@@ -42,6 +48,7 @@ const typeDefs = gql`
     users(echo: String): [User]
     user(_id: ID!): User
     trackers(echo: String): [Tracker]
+    foods: [Food]
   }
 
   type Mutation {
@@ -95,8 +102,9 @@ const typeDefs = gql`
       amount: String
       nutrients: String
     ): Entry
+
+    deleteEntry(id: ID!): String
     
-    deleteStory(id: ID!, echo: String): String
   }
   
 `;

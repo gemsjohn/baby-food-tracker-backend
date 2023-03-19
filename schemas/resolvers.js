@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { AuthenticationError } = require('apollo-server-express');
-const { User, Tracker, Entry } = require("../models");
+const { User, Tracker, Entry, Food } = require("../models");
 const { signToken, clearToken } = require('../utils/auth');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
@@ -55,7 +55,11 @@ const resolvers = {
       }
 
     },
+    foods: async () => {
+      return Food.find();
+    },
   },
+  
 
   Mutation: {
     login: async (parent, { username, password, role }) => {
@@ -241,11 +245,14 @@ const resolvers = {
         throw new Error('Missing required fields');
       }
 
+      let upperCaseItem = args.item.toUpperCase();
+      console.log("# - upperCaseItem: " + upperCaseItem)
+
       console.log("mutation/addEntry/new_entry")
       const entry = new Entry({
         date: args.date,
         schedule: args.schedule,
-        item: args.item,
+        item: upperCaseItem,
         amount: args.amount,
         nutrients: args.nutrients
       });
@@ -267,6 +274,21 @@ const resolvers = {
         },
         { new: true }
       )
+      
+
+      // const searchForFood = await Food.findOne({ item: upperCaseItem })
+
+      // if (searchForFood == null) {
+      //   console.log("# - resolvers.js/mutation/addEntry/searchForFood : Added food to DB.")
+      //   await Food.create({
+      //     item: upperCaseItem,
+      //     nutrients: args.nutrients
+      //   })
+      // } else {
+      //   console.log("# - resolvers.js/mutation/addEntry/searchForFood : Food already exists.")
+      // }
+
+      
 
       
       // // [[[[CLEAR!!!!!]]]]
@@ -277,6 +299,9 @@ const resolvers = {
       //   },
       //   { new: true }
       // )
+
+      // await Food.findByIdAndDelete({ _id: "6414b8574e7e51a59a5edb99" })
+
 
 
       return {};
@@ -479,8 +504,34 @@ const resolvers = {
       }
 
     },
+    deleteEntry: async (parent, args, context) => {
+      try {
+        if (!context.user) {
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        }
+    
+        const user = await User.findById({ _id: context.user._id })
+        if (!user) {
+          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+        }
+    
+        console.log("deleteEntry")
+        console.log(args.id)
+    
+        // Remove it using $pull
+          await User.updateOne(
+            { _id: context.user._id },
+            { $pull: { tracker: { _id: args.id } } }
+          )
+      } catch (err) {
+        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+      }
+    },
+    
 
-  }
+  },
+  
+
 };
 
 module.exports = resolvers;
