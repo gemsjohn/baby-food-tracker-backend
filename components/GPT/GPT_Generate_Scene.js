@@ -73,12 +73,24 @@ async function handleIncomingMessage(input) {
 async function generateInitialSceenDescription(input) {
     console.log("# - STEP 3 A")
     console.log(input)
+    let updatededInput = input.search;
+
+    if (typeof updatededInput == 'string') {
+        console.log("Typeof = string")
+        updatededInput = input.search;
+    } else if (typeof updatededInput == 'object') {
+        console.log("Typeof = object")
+        updatededInput = input.search.description;
+    }
+
+    console.log(updatededInput)
+
     try {
         let data = JSON.stringify({
             model: "gpt-3.5-turbo",
             messages: [
                 { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
-                { "role": "user", "content": `Can you provide the nutritional values for ${input.search.description} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
+                { "role": "user", "content": `Can you provide the nutritional values for ${updatededInput} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
             ],
             max_tokens: 100
         });

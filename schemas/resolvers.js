@@ -236,6 +236,7 @@ const resolvers = {
       // throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     },
     addEntry: async (parent, args, context) => {
+      console.log(args)
       const user = await User.findById({ _id: context.user._id })
       if (!user) {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
@@ -244,7 +245,6 @@ const resolvers = {
       if (!args.date || !args.schedule || !args.item || !args.amount || !args.nutrients) {
         throw new Error('Missing required fields');
       }
-
       let upperCaseItem = args.item.toUpperCase();
       console.log("# - upperCaseItem: " + upperCaseItem)
 
