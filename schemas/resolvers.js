@@ -242,7 +242,7 @@ const resolvers = {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
       }
 
-      if (!args.date || !args.schedule || !args.item || !args.amount || !args.nutrients) {
+      if (!args.date || !args.schedule || !args.item || !args.amount || !args.emotion || !args.nutrients) {
         throw new Error('Missing required fields');
       }
       let upperCaseItem = args.item.toUpperCase();
@@ -254,6 +254,7 @@ const resolvers = {
         schedule: args.schedule,
         item: upperCaseItem,
         amount: args.amount,
+        emotion: args.emotion,
         nutrients: args.nutrients
       });
       await entry.save();

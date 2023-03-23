@@ -14,6 +14,9 @@ const EntrySchema = new Schema(
     amount: {
       type: String
     },
+    emotion: {
+      type: String
+    },
     nutrients: {
       type: String
     },

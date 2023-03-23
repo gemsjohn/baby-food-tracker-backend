@@ -39,6 +39,7 @@ const typeDefs = gql`
     schedule: String
     item: String
     amount: String
+    emotion: String
     nutrients: String
 
   }
@@ -100,6 +101,7 @@ const typeDefs = gql`
       schedule: String
       item: String
       amount: String
+      emotion: String
       nutrients: String
     ): Entry
 
