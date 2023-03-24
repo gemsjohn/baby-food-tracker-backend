@@ -105,7 +105,7 @@ const typeDefs = gql`
       nutrients: String
     ): Entry
 
-    deleteEntry(id: ID!): String
+    deleteEntry(id: ID!, userid: String): String
     
   }
   

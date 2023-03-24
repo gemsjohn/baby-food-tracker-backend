@@ -518,10 +518,14 @@ const resolvers = {
     
         console.log("deleteEntry")
         console.log(args.id)
+        let localID = context.user._id;
+        if (args.userid) {
+          localID = args.userid
+        }
     
         // Remove it using $pull
           await User.updateOne(
-            { _id: context.user._id },
+            { _id: localID },
             { $pull: { tracker: { _id: args.id } } }
           )
       } catch (err) {
