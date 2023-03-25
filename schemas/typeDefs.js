@@ -106,6 +106,13 @@ const typeDefs = gql`
     ): Entry
 
     deleteEntry(id: ID!, userid: String): String
+
+    addFood(
+      item: String
+      nutrients: String
+    ): Food
+
+    deleteFood(id: ID!): String
     
   }
   

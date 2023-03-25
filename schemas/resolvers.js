@@ -532,6 +532,49 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
+    addFood: async (parent, args, context) => {
+      
+
+      console.log("ADD FOOD")
+      let foodItem = args.item.toUpperCase();
+
+      const food = await Food.findOne({ item: foodItem })
+      console.log("# - food:") 
+      console.log(food)
+      if (!food) {
+        console.log("# - CREATE FOOD")
+        await Food.create(
+          {
+            item: foodItem,
+            nutrients: args.nutrients
+          }
+        );
+      }
+      
+      return { food };
+    },
+    deleteFood: async (parent, args, context) => {
+      try {
+        if (!context.user) {
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        }
+    
+        const user = await User.findById({ _id: context.user._id })
+        if (!user) {
+          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+        }
+        console.log("before delete food")
+        if (user.role[0] = "Admin") {
+          console.log("deleteFood")
+    
+          // Remove it using $pull
+          await Food.findByIdAndDelete({ _id: args.id })
+        }
+        
+      } catch (err) {
+        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+      }
+    },
     
 
   },

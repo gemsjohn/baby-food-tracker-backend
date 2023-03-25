@@ -86,11 +86,27 @@ async function generateInitialSceenDescription(input) {
     console.log(updatededInput)
 
     try {
+        // let data = JSON.stringify({
+        //     model: "gpt-3.5-turbo",
+        //     messages: [
+        //         { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
+        //         { "role": "user", "content": `Can you provide the nutritional values for ${updatededInput} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
+        //     ],
+        //     max_tokens: 100
+        // });
+        // let data = JSON.stringify({
+        //     model: "gpt-3.5-turbo",
+        //     messages: [
+        //         { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
+        //         { "role": "user", "content": `Can you provide the nutritional values for ${updatededInput} considering the quantity ${input.quantity} and measurement type ${input.measurement}? I'm interested in knowing the amounts of Calories, Protein, Fat, Carbohydrates, Fiber, Sugar, Iron, Zinc, Omega-3 Fatty Acids, and Vitamin D.` },
+        //     ],
+        //     max_tokens: 100
+        // });
         let data = JSON.stringify({
             model: "gpt-3.5-turbo",
             messages: [
                 { "role": "system", "content": `You are a nutrition expert who specializes in nutrition for children under the age of 2 years old.` },
-                { "role": "user", "content": `Can you provide the nutritional values for ${updatededInput} considering the quantity ${input.quantity} and measurement type ${input.measurement}?` },
+                { "role": "user", "content": `Can you provide the approximate nutritional values for 100 grams of ${updatededInput}? I'm interested in knowing the amounts of Calories, Protein, Fat, Carbohydrates, Fiber, Sugar, Iron, Zinc, Omega-3 Fatty Acids, and Vitamin D in grams.` },
             ],
             max_tokens: 100
         });

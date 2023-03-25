@@ -9,7 +9,10 @@ const { authMiddleware } = require('./utils/auth');
 const db = require('./config/connection');
 const jwt = require('jsonwebtoken');
 const { handleIncomingMessage } = require('./components/GPT/GPT_Generate_Scene');
+const { convertNutrition } = require('./components/GPT/Convert');
 const axios = require('axios');
+const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
+const { Query_Foods } = require('./components/GPT/Query_Foods');
 
 const PORT = process.env.PORT || 3001;
 
@@ -116,12 +119,36 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
   if (!res.headersSent && userInputParsed.search.description != '') { 
       console.log("# - MAIN")
       async function main() {
-        const response = await handleIncomingMessage(userInputParsed);
+        let foodNutrients = await Query_Foods(userInputParsed.search.description);
+        // console.log(JSON.parse(foodNutrients))
+        
+        // const response = await handleIncomingMessage(userInputParsed);
         
 
-        
-        console.log(response)
-        res.status(200).json({ result: response });
+        // console.log("# - response:")
+        // console.log(response)
+        // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
+        // // console.log("# - quantity:")
+        // // console.log(userInputParsed.quantity)
+        // // console.log("# - measurement:")
+        // // console.log(userInputParsed.measurement)
+        // const conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
+        // console.log(conversion)
+
+        let response;
+        let conversion;
+        if (foodNutrients) {
+          console.log("# - FOOD DATA EXISTS: TRUE")
+          foodNutrients = JSON.parse(foodNutrients);
+          conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
+        } else {
+          console.log("# - FOOD DATA EXISTS: TRUE")
+          response = await handleIncomingMessage(userInputParsed);
+          await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
+          conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
+        }
+        console.log("# - PRE-RES-STATUS:")
+        res.status(200).json({ result: conversion });
       }
       main();
   }

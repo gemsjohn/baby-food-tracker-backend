@@ -6,7 +6,9 @@ const FoodSchema = new Schema(
     item: {
       type: String,
     },
-    nutrients: String
+    nutrients: {
+      type: String
+    },
   },
   
   // set this to use virtual below
