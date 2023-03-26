@@ -20,7 +20,9 @@ const EntrySchema = new Schema(
     nutrients: {
       type: String
     },
-
+    foodGroup: {
+      type: String
+    }
   },
   
   // set this to use virtual below

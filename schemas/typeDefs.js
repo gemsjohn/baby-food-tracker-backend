@@ -20,6 +20,7 @@ const typeDefs = gql`
     _id: ID
     item: String
     nutrients: String
+    foodGroup: String
   }
 
   type Auth {
@@ -41,7 +42,7 @@ const typeDefs = gql`
     amount: String
     emotion: String
     nutrients: String
-
+    foodGroup: String
   }
 
   type Query {
@@ -103,6 +104,7 @@ const typeDefs = gql`
       amount: String
       emotion: String
       nutrients: String
+      foodGroup: String
     ): Entry
 
     deleteEntry(id: ID!, userid: String): String
@@ -110,6 +112,7 @@ const typeDefs = gql`
     addFood(
       item: String
       nutrients: String
+      foodGroup: String
     ): Food
 
     deleteFood(id: ID!): String

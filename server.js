@@ -8,7 +8,7 @@ const { typeDefs, resolvers, permissions } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
 const db = require('./config/connection');
 const jwt = require('jsonwebtoken');
-const { handleIncomingMessage } = require('./components/GPT/GPT_Generate_Scene');
+const { handleIncomingMessage, handleIncomingMessage_FoodGroup } = require('./components/GPT/GPT_Generate_Scene');
 const { convertNutrition } = require('./components/GPT/Convert');
 const axios = require('axios');
 const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
@@ -119,38 +119,36 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
   if (!res.headersSent && userInputParsed.search.description != '') { 
       console.log("# - MAIN")
       async function main() {
-        let foodNutrients = await Query_Foods(userInputParsed.search.description);
-        // console.log(JSON.parse(foodNutrients))
-        
-        // const response = await handleIncomingMessage(userInputParsed);
-        
-
-        // console.log("# - response:")
-        // console.log(response)
-        // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
-        // // console.log("# - quantity:")
-        // // console.log(userInputParsed.quantity)
-        // // console.log("# - measurement:")
-        // // console.log(userInputParsed.measurement)
-        // const conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
-        // console.log(conversion)
-
         let response;
         let conversion;
+        let foodNutrients = await Query_Foods(userInputParsed.search.description);
+        
         if (foodNutrients) {
           console.log("# - FOOD DATA EXISTS: TRUE")
+          response = await handleIncomingMessage_FoodGroup(userInputParsed)
           foodNutrients = JSON.parse(foodNutrients);
           conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
-          res.status(200).json({ result: conversion });
+          console.log(response.foodGroup)
+          // res.status(200).json({ result: conversion });
+          res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup} });
+
         } else {
           console.log("# - FOOD DATA EXISTS: TRUE")
           response = await handleIncomingMessage(userInputParsed);
           console.log(response)
-          if (response.nutrients) {
-            await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
-            conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
+          if (response.nutrition.calories.amount) {
+            let foodGroup = JSON.stringify(response.foodGroup.group);
+            if (foodGroup != null) {
+              foodGroup = JSON.stringify(response.foodGroup.group);
+            } else {
+              foodGroup = ''
+            }
+            await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
+            conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
             console.log("# - PRE-RES-STATUS:")
-            res.status(200).json({ result: conversion });
+            console.log(response.foodGroup)
+            // res.status(200).json({ result: conversion });
+            res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup} });
           } else {
             res.status(200).json({ result: "not found" });
           }

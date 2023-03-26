@@ -13,6 +13,7 @@ const Query_Foods = async (item) => {
                 _id
                 item
                 nutrients
+                foodGroup
             }
         }
     `;
