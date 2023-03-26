@@ -130,7 +130,7 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
           conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
           console.log(response.foodGroup)
           // res.status(200).json({ result: conversion });
-          res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup} });
+          res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup.group} });
 
         } else {
           console.log("# - FOOD DATA EXISTS: FALSE")
