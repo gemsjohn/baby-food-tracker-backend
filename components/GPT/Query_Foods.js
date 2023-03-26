@@ -1,7 +1,8 @@
 const { GraphQLClient, gql } = require('graphql-request')
 
 const Query_Foods = async (item) => {
-    const endpoint = 'http://192.168.1.198:3001/graphql'
+    // const endpoint = 'http://192.168.1.198:3001/graphql'
+    const endpoint = 'https://baby-food-tracker.herokuapp.com/graphql'
     console.log("# - Mutation_Add_Food")
     // console.log(bearerToken)
 
