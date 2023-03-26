@@ -144,11 +144,17 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
         } else {
           console.log("# - FOOD DATA EXISTS: TRUE")
           response = await handleIncomingMessage(userInputParsed);
-          await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
-          conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
+          console.log(response)
+          if (response) {
+            await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response))
+            conversion = convertNutrition(response, userInputParsed.quantity, userInputParsed.measurement);
+            console.log("# - PRE-RES-STATUS:")
+            res.status(200).json({ result: conversion });
+          } else {
+            res.status(200).json({ result: "not found" });
+          }
         }
-        console.log("# - PRE-RES-STATUS:")
-        res.status(200).json({ result: conversion });
+        
       }
       main();
   }
