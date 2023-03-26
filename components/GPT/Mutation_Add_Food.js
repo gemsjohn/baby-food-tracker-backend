@@ -4,7 +4,8 @@ const Mutation_Add_Food = async (item, nutrients, foodGroup) => {
     // const endpoint = 'http://192.168.1.198:3001/graphql'
     const endpoint = 'https://baby-food-tracker.herokuapp.com/graphql'
     console.log("# - Mutation_Add_Food")
-    // console.log(bearerToken)
+    const variables = { item, nutrients, foodGroup }
+    console.log(variables)
 
     const graphQLClient = new GraphQLClient(endpoint)
 
@@ -19,8 +20,7 @@ const Mutation_Add_Food = async (item, nutrients, foodGroup) => {
         }
     `;
 
-    const variables = { item, nutrients, foodGroup }
-    console.log(variables)
+    
 
     const data = await graphQLClient.request(ADD_FOOD, variables)
     return JSON.stringify(data.addFood)

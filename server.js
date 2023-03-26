@@ -133,12 +133,12 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
           res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup} });
 
         } else {
-          console.log("# - FOOD DATA EXISTS: TRUE")
+          console.log("# - FOOD DATA EXISTS: FALSE")
           response = await handleIncomingMessage(userInputParsed);
           console.log(response)
           if (response.nutrition.calories.amount) {
-            let foodGroup = JSON.stringify(response.foodGroup.group);
-            if (foodGroup != null) {
+            let foodGroup;
+            if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
               foodGroup = JSON.stringify(response.foodGroup.group);
             } else {
               foodGroup = ''
@@ -146,9 +146,9 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
             await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
             conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
             console.log("# - PRE-RES-STATUS:")
-            console.log(response.foodGroup)
+            console.log(foodGroup)
             // res.status(200).json({ result: conversion });
-            res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup} });
+            res.status(200).json({ result: {conversion: conversion, foodGroup: foodGroup} });
           } else {
             res.status(200).json({ result: "not found" });
           }
