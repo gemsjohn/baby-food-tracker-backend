@@ -1,10 +1,38 @@
 // function convertNutrition(nutrition, servingSize) {
 function convertNutrition(nutrition, quantity, measurement) {
+    console.log("# - convertNutrition")
     function addQuotes(variable) {
         return `"${variable}"`;
     }
       
     function findConversionFactor(inputUnit) {
+        const convertGrams = [
+            { size: "cups", grams: "236.6", unit: "g" },
+            { size: "tablespoons", grams: "14.8", unit: "g" },
+            { size: "teaspoons", grams: "4.9", unit: "g" },
+            { size: "ounces", grams: "28.35", unit: "g" },
+            { size: "milliliter", grams: "0.001", unit: "g" }
+        ];
+
+        const gramsPerServing = parseFloat(convertGrams.find(obj => obj.size === "cups").grams);
+
+        switch (inputUnit) {
+            case "cups":
+                return gramsPerServing / 100;
+            case "tablespoons":
+                return parseFloat(convertGrams.find(obj => obj.size === "tablespoons").grams) / gramsPerServing;
+            case "teaspoons":
+                return parseFloat(convertGrams.find(obj => obj.size === "teaspoons").grams) / gramsPerServing;
+            case "ounces":
+                return parseFloat(convertGrams.find(obj => obj.size === "ounces").grams) / gramsPerServing;
+            case "milliliter":
+                return parseFloat(convertGrams.find(obj => obj.size === "milliliter").grams) / gramsPerServing;
+            default:
+                return 0;
+        }
+    }
+
+    function findConversionFactor_mg(inputUnit) {
         const convertGrams = [
             { size: "cups", grams: "236.6", unit: "g" },
             { size: "tablespoons", grams: "14.8", unit: "g" },
@@ -42,6 +70,9 @@ function convertNutrition(nutrition, quantity, measurement) {
     let factor = findConversionFactor(measurement.toLowerCase());
     factor = factor * quantity;
 
+    let factor_mg = findConversionFactor_mg(measurement.toLowerCase());
+    factor_mg = factor_mg * quantity;
+
 
     let calories;
     let carbohydrates;
@@ -53,6 +84,11 @@ function convertNutrition(nutrition, quantity, measurement) {
     let zinc;
     let omega_3;
     let vitaminD;
+
+    let iron_unit;
+    let zinc_unit;
+    let omega_3_unit;
+    let vitaminD_unit;
 
     if (nutrition.calories) {
         calories = Math.round(nutrition.calories.amount * factor);
@@ -84,25 +120,33 @@ function convertNutrition(nutrition, quantity, measurement) {
     } else {
         sugar = 0;
     }
-    if (nutrition.iron) {
-        iron = Math.round(nutrition.iron.amount * factor);
+    if (nutrition.iron && nutrition.iron.unit == 'mg') {
+        iron = Math.round(nutrition.iron.amount * factor_mg);
+        iron_unit = 'mg';
     } else {
-        iron = 0
+        iron = 0;
+        iron_unit = 'mg';
     }
-    if (nutrition.zinc) {
-        zinc = Math.round(nutrition.zinc.amount * factor);
+    if (nutrition.zinc && nutrition.zinc.unit == 'mg') {
+        zinc = Math.round(nutrition.zinc.amount * factor_mg);
+        zinc_unit = 'mg';
     } else {
         zinc = 0;
+        zinc_unit = 'mg';
     }
-    if (nutrition.omega_3) {
-        omega_3 = Math.round(nutrition.omega_3.amount * factor);
+    if (nutrition.omega_3 && nutrition.omega_3.unit == 'mg') {
+        omega_3 = Math.round(nutrition.omega_3.amount * factor_mg);
+        omega_3_unit = 'mg';
     } else {
         omega_3 = 0;
+        omega_3_unit = 'mg';
     }
-    if (nutrition.vitaminD) {
-        vitaminD = Math.round(nutrition.vitaminD.amount * factor);
+    if (nutrition.vitaminD && nutrition.vitaminD.unit == 'mg') {
+        vitaminD = Math.round(nutrition.vitaminD.amount * factor_mg);
+        vitaminD_unit = 'mg';
     } else {
         vitaminD = 0;
+        vitaminD_unit = 'mg';
     }
 
     // Return the converted values
@@ -113,11 +157,10 @@ function convertNutrition(nutrition, quantity, measurement) {
         "protein": { amount: protein, unit: 'g' },
         "fat": { amount: fat, unit: 'g' },
         "sugar": { amount: sugar, unit: 'g' },
-        // "iron": { amount: iron, unit: nutrition.iron.unit ||  'g' },
-        // "zinc": { amount: zinc, unit: nutrition.zinc.unit ||  'g' },
-        // "omega3": { amount: omega_3, unit: 'g' },
-        // "vitaminD": { amount: vitaminD, unit: 'g' }
-
+        "iron": { amount: iron, unit: iron_unit },
+        "zinc": { amount: zinc, unit: zinc_unit },
+        "omega3": { amount: omega_3, unit: omega_3_unit },
+        "vitaminD": { amount: vitaminD, unit: vitaminD_unit }
     };
 }
 

@@ -5,34 +5,30 @@ const { Configuration, OpenAIApi } = require("openai");
 let apiKey = process.env.OPENAI_API_KEY;
 
 
-async function handleIncomingMessage(input) {
-    console.log("# - STEP 2 A")
+async function getNutritionDetailsAndFoodGroup(input) {
+    console.log("# - getNutritionDetailsAndFoodGroup()")
     const response = await generateInitialSceenDescription(input);
     const foodGroup = await generateFoodGroup(input);
     return {nutrition: response, foodGroup: foodGroup};
 }
 
-async function handleIncomingMessage_FoodGroup(input) {
-    console.log("# - STEP 2 A")
+async function handleIdentifyFoodGroup(input) {
+    console.log("# - handleIdentifyFoodGroup()")
     const foodGroup = await generateFoodGroup(input);
     return {foodGroup: foodGroup};
 }
 
 
 async function generateInitialSceenDescription(input) {
-    console.log("# - STEP 3 A")
+    console.log("# - generateInitialSceenDescription")
     console.log(input)
     let updatededInput = input.search;
 
     if (typeof updatededInput == 'string') {
-        console.log("Typeof = string")
         updatededInput = input.search;
     } else if (typeof updatededInput == 'object') {
-        console.log("Typeof = object")
         updatededInput = input.search.description;
     }
-
-    console.log(updatededInput)
 
     try {
         let data = JSON.stringify({
@@ -91,19 +87,14 @@ async function generateInitialSceenDescription(input) {
 } 
 
 async function generateFoodGroup(input) {
-    console.log("# - ALT 1")
-    console.log(input)
+    console.log("# - generateFoodGroup()")
     let updatededInput = input.search;
 
     if (typeof updatededInput == 'string') {
-        console.log("Typeof = string")
         updatededInput = input.search;
     } else if (typeof updatededInput == 'object') {
-        console.log("Typeof = object")
         updatededInput = input.search.description;
     }
-
-    console.log(updatededInput)
 
     try {
         let data = JSON.stringify({
@@ -156,4 +147,4 @@ async function generateFoodGroup(input) {
 
 
 
-module.exports = { handleIncomingMessage, handleIncomingMessage_FoodGroup }
+module.exports = { getNutritionDetailsAndFoodGroup, handleIdentifyFoodGroup }

@@ -8,7 +8,7 @@ const { typeDefs, resolvers, permissions } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
 const db = require('./config/connection');
 const jwt = require('jsonwebtoken');
-const { handleIncomingMessage, handleIncomingMessage_FoodGroup } = require('./components/GPT/GPT_Generate_Scene');
+const { getNutritionDetailsAndFoodGroup, handleIdentifyFoodGroup } = require('./components/GPT/GPT_Generate_Scene');
 const { convertNutrition } = require('./components/GPT/Convert');
 const axios = require('axios');
 const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
@@ -108,33 +108,30 @@ app.post('/query-usda/:prompt', (req, res) => {
 
 
 app.post(`/api/npc/:prompt`, async (req, res) => {
-  console.log("# - STEP 1")
-
   const userInput = req.params.prompt;
   let userInputParsed = JSON.parse(decodeURIComponent(userInput));
 
-  console.log("# - USER INPUT:");
+  console.log("# - STEP 1 USER INPUT:");
   console.log(userInputParsed)
 
   if (!res.headersSent && userInputParsed.search.description != '') { 
-      console.log("# - MAIN")
+      console.log("# - STEP 2 MAIN")
       async function main() {
         let response;
         let conversion;
         let foodNutrients = await Query_Foods(userInputParsed.search.description);
         
         if (foodNutrients) {
-          console.log("# - FOOD DATA EXISTS: TRUE")
-          response = await handleIncomingMessage_FoodGroup(userInputParsed)
+          console.log("# - FOOD ITEM EXISTS")
+          response = await handleIdentifyFoodGroup(userInputParsed)
+          console.log(response)
           foodNutrients = JSON.parse(foodNutrients);
           conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
-          console.log(response.foodGroup)
-          // res.status(200).json({ result: conversion });
           res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup.group} });
 
         } else {
-          console.log("# - FOOD DATA EXISTS: FALSE")
-          response = await handleIncomingMessage(userInputParsed);
+          console.log("# - FOOD ITEM DOES NOT EXIST")
+          response = await getNutritionDetailsAndFoodGroup(userInputParsed);
           console.log(response)
           if (response.nutrition.calories.amount) {
             let foodGroup;

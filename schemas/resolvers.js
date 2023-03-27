@@ -246,9 +246,8 @@ const resolvers = {
         throw new Error('Missing required fields');
       }
       let upperCaseItem = args.item.toUpperCase();
-      console.log("# - upperCaseItem: " + upperCaseItem)
-
       console.log("mutation/addEntry/new_entry")
+
       const entry = new Entry({
         date: args.date,
         schedule: args.schedule,
@@ -552,6 +551,37 @@ const resolvers = {
           }
         );
       }
+      
+      return { food };
+    },
+    editFood: async (parent, args, context) => {
+      
+
+      console.log("ADD FOOD")
+      let foodItem = args.item.toUpperCase();
+
+      // const food = await Food.findOne({ item: foodItem })
+      // console.log("# - food:") 
+      // console.log(food)
+      // if (!food) {
+      //   console.log("# - CREATE FOOD")
+      //   await Food.create(
+      //     {
+      //       item: foodItem,
+      //       nutrients: args.nutrients,
+      //       foodGroup: args.foodGroup
+      //     }
+      //   );
+      // }
+      const food = await Food.findByIdAndUpdate(
+        {_id: args.foodid},
+        {
+          item: foodItem,
+          nutrients: args.nutrients,
+          foodGroup: args.foodGroup
+        },
+        { new: true }
+      )
       
       return { food };
     },

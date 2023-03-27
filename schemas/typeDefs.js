@@ -115,6 +115,13 @@ const typeDefs = gql`
       foodGroup: String
     ): Food
 
+    editFood(
+      foodid: String
+      item: String
+      nutrients: String
+      foodGroup: String
+    ): Food
+
     deleteFood(id: ID!): String
     
   }
