@@ -22,6 +22,9 @@ const EntrySchema = new Schema(
     },
     foodGroup: {
       type: String
+    },
+    allergy: {
+      type: String
     }
   },
   

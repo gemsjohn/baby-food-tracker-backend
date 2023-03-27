@@ -95,6 +95,7 @@ const resolvers = {
           username: filteredUsername,
           password: args.password,
           tracker: [],
+          allergy: [],
           tokens: 1,
         }
       );
@@ -126,6 +127,37 @@ const resolvers = {
             },
             { new: true }
           )
+        }
+      } catch (err) {
+        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+      }
+    },
+    updateUserAllergies: async (parents, args, context) => {
+      try {
+        if (!context.user) {
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        }
+
+        const user = await User.findById({ _id: context.user._id })
+        if (!user) {
+          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+        }
+
+        // let upperCaseItem = args.item;
+        // upperCaseItem = upperCaseItem.toUpperCase();
+
+        if (context.user) {
+          const itemToRemove = args.item;
+          console.log(itemToRemove)
+          await User.findByIdAndUpdate(
+            { _id: context.user._id },
+            {
+              $pull: {
+                allergy: `${itemToRemove}`,
+              },
+            },
+            { new: true }
+          );
         }
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
@@ -242,9 +274,9 @@ const resolvers = {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
       }
 
-      if (!args.date || !args.schedule || !args.item || !args.amount || !args.emotion || !args.nutrients || !args.foodGroup) {
-        throw new Error('Missing required fields');
-      }
+      // if (!args.date || !args.schedule || !args.item || !args.amount || !args.emotion || !args.nutrients || !args.foodGroup) {
+      //   throw new Error('Missing required fields');
+      // }
       let upperCaseItem = args.item.toUpperCase();
       console.log("mutation/addEntry/new_entry")
 
@@ -255,7 +287,8 @@ const resolvers = {
         amount: args.amount,
         emotion: args.emotion,
         nutrients: args.nutrients,
-        foodGroup: args.foodGroup
+        foodGroup: args.foodGroup,
+        allergy: args.allergy
       });
       await entry.save();
 
@@ -270,11 +303,26 @@ const resolvers = {
         { _id: user._id },
         {
           $push: {
-            tracker: tracker
+            tracker: tracker,
           }
         },
         { new: true }
       )
+      
+      if (args.allergy === "Mild" || args.allergy === 'Strong') {
+        if (!user.allergy.includes(upperCaseItem)) {
+          await User.findByIdAndUpdate(
+            { _id: user._id },
+            {
+              $push: {
+                allergy: upperCaseItem,
+              }
+            },
+            { new: true }
+          );
+        }
+      }
+      
       
 
       // const searchForFood = await Food.findOne({ item: upperCaseItem })

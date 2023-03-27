@@ -10,6 +10,7 @@ const typeDefs = gql`
     username: String
     email: String
     tracker: [Tracker]
+    allergy: [String]
     resetToken: String
     resetTokenExpiry: String
     currentVersion: String
@@ -43,6 +44,7 @@ const typeDefs = gql`
     emotion: String
     nutrients: String
     foodGroup: String
+    allergy: String
   }
 
   type Query {
@@ -60,11 +62,12 @@ const typeDefs = gql`
     ): Auth
 
     addUser(
-      role: [String!],
-      username: String!, 
-      email: String!,
+      role: [String!]
+      username: String!
+      email: String!
       tracker: String
-      password: String!,
+      allergy: String
+      password: String!
       tokens: String
     ): Auth
 
@@ -84,6 +87,10 @@ const typeDefs = gql`
     
     updateUserPassword(
       password: String
+    ): User
+    
+    updateUserAllergies(
+      item: String
     ): User
 
     requestReset(
@@ -105,6 +112,7 @@ const typeDefs = gql`
       emotion: String
       nutrients: String
       foodGroup: String
+      allergy: String
     ): Entry
 
     deleteEntry(id: ID!, userid: String): String

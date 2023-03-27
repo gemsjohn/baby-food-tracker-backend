@@ -26,6 +26,9 @@ const UserSchema = new Schema(
       required: true,
     },
     tracker: [Tracker],
+    allergy: {
+      type: [String]
+    },
     resetToken: {
       type: String,
     },
