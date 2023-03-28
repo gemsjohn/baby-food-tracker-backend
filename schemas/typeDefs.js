@@ -131,6 +131,11 @@ const typeDefs = gql`
     ): Food
 
     deleteFood(id: ID!): String
+
+    sendPDFContent(
+      email: String
+      html: String
+    ): User
     
   }
   

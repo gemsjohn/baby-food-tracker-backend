@@ -655,6 +655,36 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
+    sendPDFContent: async (parent, { email, html }, context) => {
+      let lowerCaseEmail = email.toLowerCase();
+      const username = `${process.env.SMTP_USERNAME}`
+      const password = `${process.env.SMTP_PASSWORD}`
+
+      let transport = nodemailer.createTransport({
+        host: "smtp.dreamhost.com",
+        port: 465,
+        auth: {
+          user: `${username}`,
+          pass: `${password}`
+        },
+        secure: true,
+        logger: true,
+        debug: true,
+      });
+
+
+      // Email them the token
+      const mailRes = await transport.sendMail({
+        from: 'admin@honestpatina.com',
+        to: lowerCaseEmail,
+        subject: "PDFGenerator",
+        html: html
+      });
+      console.log(mailRes)
+
+      return true;
+
+    },
     
 
   },
