@@ -95,6 +95,7 @@ async function generateFoodGroup(input) {
     } else if (typeof updatededInput == 'object') {
         updatededInput = input.search.description;
     }
+    console.log("# - generateFoodGroup() CHECK 1")
 
     try {
         let data = JSON.stringify({
@@ -115,6 +116,9 @@ async function generateFoodGroup(input) {
             },
             data: data
         };
+
+        console.log("# - generateFoodGroup() CHECK 2")
+
         let completion = await axios(config)
             .then(function (response) {
                 let output = response.data.choices[0].message;
@@ -131,6 +135,7 @@ async function generateFoodGroup(input) {
                 }
 
                 const foodGroup = findFoodGroup(output.content);
+                console.log("# - generateFoodGroup() CHECK 3")
 
                 return foodGroup;
             })

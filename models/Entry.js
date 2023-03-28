@@ -8,6 +8,9 @@ const EntrySchema = new Schema(
     schedule: {
       type: String
     },
+    time: {
+      type: String
+    },
     item: {
       type: String
     },

@@ -283,6 +283,7 @@ const resolvers = {
       const entry = new Entry({
         date: args.date,
         schedule: args.schedule,
+        time: args.time,
         item: upperCaseItem,
         amount: args.amount,
         emotion: args.emotion,

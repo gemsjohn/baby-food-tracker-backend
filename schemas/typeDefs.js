@@ -39,6 +39,7 @@ const typeDefs = gql`
     _id: String
     date: String
     schedule: String
+    time: String
     item: String
     amount: String
     emotion: String
@@ -107,6 +108,7 @@ const typeDefs = gql`
     addEntry(
       date: String
       schedule: String
+      time: String
       item: String
       amount: String
       emotion: String
