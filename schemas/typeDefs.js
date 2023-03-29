@@ -3,30 +3,28 @@ const { gql } = require('apollo-server-express');
 
 // create our typeDefs
 const typeDefs = gql`
+  type Auth {
+    token: ID!
+    user: User
+  }
 
   type User {
     _id: ID
     role: [String]
     username: String
     email: String
-    tracker: [Tracker]
-    allergy: [String]
     resetToken: String
     resetTokenExpiry: String
     currentVersion: String
-    tokens: String
+    premium: Boolean
+    subuser: [SubUser]
   }
 
-  type Food {
+  type SubUser {
     _id: ID
-    item: String
-    nutrients: String
-    foodGroup: String
-  }
-
-  type Auth {
-    token: ID!
-    user: User
+    subusername: String
+    tracker: [Tracker]
+    allergy: [String]
   }
 
   type Tracker {
@@ -37,15 +35,36 @@ const typeDefs = gql`
 
   type Entry {
     _id: String
+    subuserid: String
     date: String
     schedule: String
     time: String
     item: String
     amount: String
     emotion: String
-    nutrients: String
+    nutrients: Nutrients
     foodGroup: String
     allergy: String
+  }
+
+  type Food {
+    _id: ID
+    item: String
+    nutrients: Nutrients
+    foodGroup: String
+  }
+  
+  type Nutrients {
+    calories: String
+    protein: String
+    fat: String
+    carbohydrates: String
+    fiber: String
+    sugar: String
+    iron: String
+    zinc: String
+    omega3: String
+    vitaminD: String
   }
 
   type Query {
@@ -66,32 +85,22 @@ const typeDefs = gql`
       role: [String!]
       username: String!
       email: String!
-      tracker: String
-      allergy: String
       password: String!
-      tokens: String
+      premium: Boolean
+      subuser: [String]
     ): Auth
-
-    deleteUser(id: ID!): String
 
     updateUser(
       username: String, 
       email: String,
     ): User
-
-    updateTokenCount(
-      userid: String,
-      remove: String,
-      add: String,
-      amount: String
+    
+    updatePremium(
+      premium: Boolean
     ): User
     
     updateUserPassword(
       password: String
-    ): User
-    
-    updateUserAllergies(
-      item: String
     ): User
 
     requestReset(
@@ -105,30 +114,57 @@ const typeDefs = gql`
       resetToken: String
     ): User
 
-    addEntry(
+    deleteUser(id: ID!): String
+    
+    addSubUser(
+      subusername: String
+    ): SubUser
+
+    updateSubUserAllergies(
+      subuserid: String
+      item: String
+    ): SubUser
+
+    addNutrients(
+      calories: String
+      protein: String
+      fat: String
+      carbohydrates: String
+      fiber: String
+      sugar: String
+      iron: String
+      zinc: String
+      omega3: String
+      vitaminD: String
+    ): Nutrients
+
+    addSubUserEntry(
+      subuserid: String
       date: String
       schedule: String
       time: String
       item: String
       amount: String
       emotion: String
-      nutrients: String
+      nutrients: [String]
       foodGroup: String
       allergy: String
     ): Entry
 
-    deleteEntry(id: ID!, userid: String): String
+    deleteEntry(id: ID!, subuserid: String): String
+    deleteSubUser(userid: ID!, subuserid: ID!): String
 
     addFood(
       item: String
-      nutrients: String
+      nutrients: [String]
       foodGroup: String
     ): Food
 
     editFood(
       foodid: String
       item: String
-      nutrients: String
+      nutritioncategory: String
+      specificnutrientdetail: String
       foodGroup: String
     ): Food
 

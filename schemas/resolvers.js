@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { AuthenticationError } = require('apollo-server-express');
-const { User, Tracker, Entry, Food } = require("../models");
+const { User, Tracker, Entry, Food, SubUser, Nutrients, Nutrient_Details } = require("../models");
 const { signToken, clearToken } = require('../utils/auth');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
@@ -94,13 +94,51 @@ const resolvers = {
           email: filteredEmail,
           username: filteredUsername,
           password: args.password,
-          tracker: [],
-          allergy: [],
-          tokens: 1,
+          premium: false,
+          subuser: []
         }
       );
       const token = signToken(user);
       return { token, user };
+    },
+    addSubUser: async (parent, args, context) => {
+      console.log("# - addSubUser CHECK 1")
+      if (!context.user) {
+        throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+      }
+      console.log("# - addSubUser CHECK 2")
+
+      const user = await User.findById({ _id: context.user._id })
+      if (!user) {
+        throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+      }
+      console.log("# - addSubUser CHECK 3")
+
+      if (!user.premium) {
+        throw new ApolloError('Premium service false', 'ADD_SUBUSER_FAILED')
+      }
+      console.log("ADD SUBUSER")
+      let lowerCaseUsername = args.subusername.toLowerCase();
+      let filteredUsername = lowerCaseUsername.replace(/\s+/g, '');
+
+      const subuser = await SubUser.create(
+        {
+          subusername: filteredUsername,
+          tracker: [],
+          allergy: []
+        }
+      );
+
+      await User.findByIdAndUpdate(
+        { _id: context.user._id },
+        {
+          $push: {
+            subuser: subuser,
+          }
+        },
+        { new: true }
+      )
+      return { subuser };
     },
     updateUser: async (parents, args, context) => {
       try {
@@ -132,7 +170,7 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
-    updateUserAllergies: async (parents, args, context) => {
+    updatePremium: async (parents, args, context) => {
       try {
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
@@ -142,27 +180,21 @@ const resolvers = {
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
-
-        // let upperCaseItem = args.item;
-        // upperCaseItem = upperCaseItem.toUpperCase();
-
+        console.log("updatePremium")
         if (context.user) {
-          const itemToRemove = args.item;
-          console.log(itemToRemove)
           await User.findByIdAndUpdate(
             { _id: context.user._id },
             {
-              $pull: {
-                allergy: `${itemToRemove}`,
-              },
+              premium: args.premium
             },
             { new: true }
-          );
+          )
         }
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
+    
     updateUserPassword: async (parent, { password }, context) => {
       console.log(context.user)
       try {
@@ -194,104 +226,50 @@ const resolvers = {
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
-
-      // throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     },
-    updateTokenCount: async (parents, args, context) => {
-      try {
-        if (!context.user) {
-          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
-        }
-        console.log("#1")
-
-        const user = await User.findById({ _id: args.userid })
-        if (!user) {
-          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
-        }
-        console.log("#2")
-
-
-        if (args.remove === "true" && user.tokens <= 0) {
-          throw new ApolloError('Insufficient tokens', 'INSUFFICIENT_TOKENS')
-        }
-        console.log("#3")
-
-        const amount = Number(args.amount)
-        console.log(amount)
-        if (isNaN(amount) || amount < 0) {
-          throw new ApolloError('Invalid amount provided', 'INVALID_INPUT')
-        }
-        console.log("#4")
-
-
-        if (args.add !== "true" && args.add !== "false") {
-          throw new ApolloError('Invalid add argument provided', 'INVALID_INPUT')
-        }
-        console.log("#5")
-
-
-        if (args.remove !== "true" && args.remove !== "false") {
-          throw new ApolloError('Invalid remove argument provided', 'INVALID_INPUT')
-        }
-        console.log("#6")
-
-        console.log("updateTokenCount")
-        if (user.tokens > 0 && args.remove == "true") {
-          console.log("#8")
-
-          await User.findByIdAndUpdate(
-            { _id: args.userid },
-            {
-              tokens: user.tokens - 1
-            },
-            { new: true }
-          )
-        }
-        if (args.add == "true" && Number(args.amount) > 0) {
-          console.log("#9")
-
-          const updateTokens = Number(user.tokens) + Number(args.amount);
-          console.log(args.add)
-          await User.findByIdAndUpdate(
-            { _id: args.userid },
-            {
-              tokens: updateTokens
-            },
-            { new: true }
-          )
-        }
-
-      } catch (err) {
-        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
-      }
-
-      // throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
-    },
-    addEntry: async (parent, args, context) => {
-      console.log(args)
+    addSubUserEntry: async (parent, args, context) => {
+      console.log("# - addSubUserEntry CHECK 1")
       const user = await User.findById({ _id: context.user._id })
       if (!user) {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
       }
+      console.log("# - addSubUserEntry CHECK 2")
 
-      // if (!args.date || !args.schedule || !args.item || !args.amount || !args.emotion || !args.nutrients || !args.foodGroup) {
-      //   throw new Error('Missing required fields');
-      // }
       let upperCaseItem = args.item.toUpperCase();
-      console.log("mutation/addEntry/new_entry")
+
+      let parsedNutrients = JSON.parse(args.nutrients)
+
+      const nutrients = new Nutrients({
+        calories: JSON.stringify(parsedNutrients.calories),
+        protein: JSON.stringify(parsedNutrients.protein),
+        fat: JSON.stringify(parsedNutrients.fat),
+        carbohydrates: JSON.stringify(parsedNutrients.carbohydrates),
+        fiber: JSON.stringify(parsedNutrients.fiber),
+        sugar: JSON.stringify(parsedNutrients.sugar),
+        iron: JSON.stringify(parsedNutrients.iron),
+        zinc: JSON.stringify(parsedNutrients.zinc),
+        omega3: JSON.stringify(parsedNutrients.omega3),
+        vitaminD: JSON.stringify(parsedNutrients.vitaminD)
+      })
+
+      console.log("# - addSubUserEntry CHECK 3")
+
+      console.log(nutrients)
 
       const entry = new Entry({
+        subuserid: args.subuserid,
         date: args.date,
         schedule: args.schedule,
         time: args.time,
         item: upperCaseItem,
         amount: args.amount,
         emotion: args.emotion,
-        nutrients: args.nutrients,
+        nutrients: nutrients,
         foodGroup: args.foodGroup,
         allergy: args.allergy
       });
       await entry.save();
+      console.log("# - addSubUserEntry CHECK 4")
 
 
       const tracker = new Tracker({
@@ -300,62 +278,153 @@ const resolvers = {
       });
       await tracker.save();
 
-      await User.findByIdAndUpdate(
-        { _id: user._id },
-        {
-          $push: {
-            tracker: tracker,
-          }
-        },
-        { new: true }
-      )
-      
-      if (args.allergy === "Mild" || args.allergy === 'Strong') {
-        if (!user.allergy.includes(upperCaseItem)) {
-          await User.findByIdAndUpdate(
-            { _id: user._id },
-            {
-              $push: {
-                allergy: upperCaseItem,
-              }
-            },
-            { new: true }
-          );
+      console.log("# - addSubUserEntry CHECK 5")
+
+      for (let i = 0; i < user.subuser.length; i++) {
+        console.log("# - addSubUserEntry CHECK 6")
+        if (user.subuser[i]._id == args.subuserid) {
+          let subuser = user.subuser[i]
+          console.log("# - addSubUserEntry CHECK 7")
+          // Find the index of the subuser in the user's subuser array
+          const subuserIndex = user.subuser.findIndex((subuser) => subuser._id == args.subuserid);
+
+          console.log("# - addSubUserEntry CHECK 8 - SUBUSERNAME: " + subuser.subusername)
+          // Update the subuser in the user's subuser array
+
+          const allergies = user.subuser[subuserIndex].allergy;
+
+          user.subuser[subuserIndex] = {
+            ...user.subuser[subuserIndex],
+            _id: subuser._id,
+            subusername: subuser.subusername,
+            tracker: [...user.subuser[subuserIndex].tracker, tracker],
+            allergy: args.allergy === "Mild" || args.allergy === 'Strong' ?
+                !allergies.includes(upperCaseItem) ?
+                  [...user.subuser[subuserIndex].allergy, upperCaseItem] :
+                  user.subuser[subuserIndex].allergy
+                :
+                user.subuser[subuserIndex].allergy
+          };
+
+          // Save the updated user object
+          await user.save();
         }
       }
-      
-      
-
-      // const searchForFood = await Food.findOne({ item: upperCaseItem })
-
-      // if (searchForFood == null) {
-      //   console.log("# - resolvers.js/mutation/addEntry/searchForFood : Added food to DB.")
-      //   await Food.create({
-      //     item: upperCaseItem,
-      //     nutrients: args.nutrients
-      //   })
-      // } else {
-      //   console.log("# - resolvers.js/mutation/addEntry/searchForFood : Food already exists.")
-      // }
-
-      
-
-      
-      // // [[[[CLEAR!!!!!]]]]
-      // await User.findByIdAndUpdate(
-      //   { _id: user._id },
-      //   {
-      //     tracker: []
-      //   },
-      //   { new: true }
-      // )
-
-      // await Food.findByIdAndDelete({ _id: "6414b8574e7e51a59a5edb99" })
-
-
+      const food = await Food.findOne({ item: upperCaseItem })
+      if (food) {
+        console.log("# - " + upperCaseItem + " ALREADY EXISTS IN THE FOOD DB")
+      } else {
+        console.log("# - ADDING " + upperCaseItem + " TO THE FOOD DB")
+        const food = new Food({
+          item: upperCaseItem,
+          nutrients: nutrients,
+          foodGroup: args.foodGroup,
+        });
+        await food.save();
+      }
 
       return {};
     },
+    deleteEntry: async (parent, args, context) => {
+      try {
+        console.log("# - deleteEntry CHECK 1")
+        if (!context.user) {
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        }
+    
+        console.log("# - deleteEntry CHECK 2")
+        const user = await User.findById({ _id: context.user._id })
+        if (!user) {
+          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+        }
+    
+        console.log("# - deleteEntry CHECK 3")
+        console.log(args.id)
+    
+        for (let i = 0; i < user.subuser.length; i++) {
+          if (user.subuser[i]._id == args.subuserid) {
+            console.log("# - deleteEntry CHECK 4")
+            let subuser = user.subuser[i]
+            console.log(subuser._id)
+    
+            for (let j = 0; j < subuser.tracker.length; j++) {
+              let trackerObject = subuser.tracker[j]
+              let trackerObjectID = trackerObject._id;
+    
+              if (trackerObjectID == args.id) {
+                console.log(trackerObjectID)
+                await User.findByIdAndUpdate(
+                  { _id: user._id},
+                  {
+                    $pull: {
+                      "subuser.$[i].tracker": {
+                        _id: args.id
+                      }
+                    }
+                  },
+                  {
+                    arrayFilters: [{ "i._id": subuser._id }]
+                  }
+                )
+              }
+            }
+          }
+        }
+      } catch (err) {
+        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+      }
+    },
+    updateSubUserAllergies: async (parents, args, context) => {
+      try {
+        console.log("# - updateSubUserAllergies CHECK 1")
+        if (!context.user) {
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        }
+    
+        console.log("# - updateSubUserAllergies CHECK 2")
+        const user = await User.findById({ _id: context.user._id })
+        if (!user) {
+          throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+        }
+    
+        console.log("# - updateSubUserAllergies CHECK 3")
+    
+        for (let i = 0; i < user.subuser.length; i++) {
+          if (user.subuser[i]._id == args.subuserid) {
+            console.log("# - updateSubUserAllergies CHECK 4")
+            let subuser = user.subuser[i]
+            console.log(subuser._id)
+
+
+    
+            for (let j = 0; j < subuser.allergy.length; j++) {
+              let allergy = subuser.allergy[j]
+
+              if (allergy == args.item) {
+
+                await User.findByIdAndUpdate(
+                  { _id: user._id},
+                  {
+                    $pull: {
+                      "subuser.$[i].allergy": args.item
+                    }
+                  },
+                  {
+                    arrayFilters: [{ "i._id": subuser._id }]
+                  }
+                )
+                console.log("#- REMOVE: " + allergy)
+
+              }
+            }
+          }
+        }
+      } catch (err) {
+        throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+      }
+    },
+    
+    
 
     requestReset: async (parent, { email }, context) => {
       let lowerCaseEmail = email.toLowerCase();
@@ -531,11 +600,6 @@ const resolvers = {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
 
-        // const saltRounds = 10;
-        // const hash = await bcrypt.hash(args.echo, saltRounds);
-
-        // if (await bcrypt.compare(process.env.ACCESS_PASSWORD, hash)) {
-        //   if (context.user.role[0] === 'Admin') {
         console.log("deleteUser")
 
         if (context.user._id == args.id || context.user.role[0] == 'Admin') {
@@ -554,36 +618,88 @@ const resolvers = {
       }
 
     },
-    deleteEntry: async (parent, args, context) => {
+    deleteSubUser: async (parent, args, context) => {
       try {
+        console.log("# - deleteSubUser CHECK 1")
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
         }
-    
-        const user = await User.findById({ _id: context.user._id })
+
+        console.log("# - deleteSubUser CHECK 2")
+        const user = await User.findById({ _id: args.userid })
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
+
+        console.log("# - deleteSubUser CHECK 3")
+
+        if (context.user._id == args.userid || context.user.role[0] == 'Admin') {
+          console.log("# - deleteSubUser CHECK 4")
+          // const subuser = await SubUser.findOne({ _id: args.subuserid })
+          // let subuser;
+          
+          for (let i = 0; i < user.subuser.length; i++) {
+            // subuser = await SubUser.findById({ _id: args.subuserid })
+
+            if (user.subuser[i]._id == args.subuserid) {
+              let subuser = user.subuser[i]
+
+              for (let i = 0; i < subuser.tracker.length; i++) {
+                console.log("# - deleteSubUser CHECK 5 : " + i)
+                await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
+              }
     
-        console.log("deleteEntry")
-        console.log(args.id)
-        let localID = context.user._id;
-        if (args.userid) {
-          localID = args.userid
+              await User.findByIdAndUpdate(
+                { _id: args.userid },
+                {
+                  $pull: {
+                    subuser: subuser,
+                  },
+                },
+                { new: true }
+              );
+
+            }
+          }
+          
+
+        } else {
+          return null;
         }
-    
-        // Remove it using $pull
-          await User.updateOne(
-            { _id: localID },
-            { $pull: { tracker: { _id: args.id } } }
-          )
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
-    },
-    addFood: async (parent, args, context) => {
-      
 
+    },
+    // deleteEntry: async (parent, args, context) => {
+    //   try {
+    //     if (!context.user) {
+    //       throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+    //     }
+    
+    //     const user = await User.findById({ _id: context.user._id })
+    //     if (!user) {
+    //       throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
+    //     }
+    
+    //     console.log("deleteEntry")
+    //     console.log(args.id)
+
+    //     let localID = context.user._id;
+    //     if (localID != args.userid) {
+    //       throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+    //     }
+    
+    //     // Remove it using $pull
+    //       await SubUser.updateOne(
+    //         { _id: args.subuserid },
+    //         { $pull: { tracker: { _id: args.id } } }
+    //       )
+    //   } catch (err) {
+    //     throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
+    //   }
+    // },
+    addFood: async (parent, args, context) => {
       console.log("ADD FOOD")
       let foodItem = args.item.toUpperCase();
 
@@ -604,36 +720,36 @@ const resolvers = {
       return { food };
     },
     editFood: async (parent, args, context) => {
+      const { foodid, item, nutritioncategory, specificnutrientdetail, foodGroup } = args;
+    
+      // Find the food item to edit
+      const foodItem = await Food.findById(foodid);
+      if (!foodItem) {
+        throw new Error(`Food item with id ${foodid} not found`);
+      }
+
+    
+      // Create a copy of the nutrients object and update only the specified subcategory
       
+      let foodUpdate = foodItem.nutrients;
+      foodItem.nutrients[nutritioncategory] = specificnutrientdetail;
 
-      console.log("ADD FOOD")
-      let foodItem = args.item.toUpperCase();
-
-      // const food = await Food.findOne({ item: foodItem })
-      // console.log("# - food:") 
-      // console.log(food)
-      // if (!food) {
-      //   console.log("# - CREATE FOOD")
-      //   await Food.create(
-      //     {
-      //       item: foodItem,
-      //       nutrients: args.nutrients,
-      //       foodGroup: args.foodGroup
-      //     }
-      //   );
-      // }
-      const food = await Food.findByIdAndUpdate(
-        {_id: args.foodid},
-        {
-          item: foodItem,
-          nutrients: args.nutrients,
-          foodGroup: args.foodGroup
+      
+    
+      // Update the food item in the database
+      const updatedFoodItem = await Food.findByIdAndUpdate(
+        foodid,
+        { 
+          item, 
+          nutrients: foodUpdate,
+          foodGroup 
         },
         { new: true }
-      )
-      
-      return { food };
+      );
+      return updatedFoodItem;
     },
+    
+    
     deleteFood: async (parent, args, context) => {
       try {
         if (!context.user) {

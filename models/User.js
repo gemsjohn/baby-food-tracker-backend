@@ -2,6 +2,8 @@ const { Schema, model } = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const Tracker = require('./Tracker').schema;
+const SubUser = require('./SubUser').schema;
+
 
 
 const UserSchema = new Schema(
@@ -25,10 +27,6 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
-    tracker: [Tracker],
-    allergy: {
-      type: [String]
-    },
     resetToken: {
       type: String,
     },
@@ -39,9 +37,11 @@ const UserSchema = new Schema(
       type: String,
       default: '1.0.0'
     },
-    tokens: {
-      type: String
-    }
+    premium: {
+      type: Boolean,
+      default: false
+    },
+    subuser: [SubUser]
   },
   
   // set this to use virtual below

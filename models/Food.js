@@ -1,14 +1,13 @@
 const { Schema, model } = require('mongoose');
-const Entry = require('./Entry').schema;
+
+const Nutrients = require('./Nutrients').schema;
 
 const FoodSchema = new Schema(
   {
     item: {
       type: String,
     },
-    nutrients: {
-      type: String
-    },
+    nutrients: Nutrients,
     foodGroup: {
       type: String
     }

@@ -1,7 +1,12 @@
 const { Schema, model } = require('mongoose');
 
+const Nutrients = require('./Nutrients').schema;
+
 const EntrySchema = new Schema(
   {
+    subuserid: {
+      type: String
+    },
     date: {
       type: String
     },
@@ -20,9 +25,7 @@ const EntrySchema = new Schema(
     emotion: {
       type: String
     },
-    nutrients: {
-      type: String
-    },
+    nutrients: Nutrients,
     foodGroup: {
       type: String
     },
