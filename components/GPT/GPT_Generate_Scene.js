@@ -21,7 +21,6 @@ async function handleIdentifyFoodGroup(input) {
 
 async function generateInitialSceenDescription(input) {
     console.log("# - generateInitialSceenDescription")
-    console.log(input)
     let updatededInput = input.search;
 
     if (typeof updatededInput == 'string') {
@@ -52,7 +51,7 @@ async function generateInitialSceenDescription(input) {
         let completion = await axios(config)
             .then(function (response) {
                 let output = response.data.choices[0].message;
-                console.log("# - STEP 4 A")
+                console.log("# - GPT NUTRITIONAL DATA")
                 console.log(output)
 
                 function extractNutrients(text) {

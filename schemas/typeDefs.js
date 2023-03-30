@@ -48,24 +48,30 @@ const typeDefs = gql`
   }
 
   type Food {
-    _id: ID
-    item: String
-    nutrients: Nutrients
-    foodGroup: String
-  }
-  
-  type Nutrients {
-    calories: String
-    protein: String
-    fat: String
-    carbohydrates: String
-    fiber: String
-    sugar: String
-    iron: String
-    zinc: String
-    omega3: String
-    vitaminD: String
-  }
+  _id: ID
+  item: String
+  nutrients: Nutrients
+  foodGroup: String
+}
+
+type Nutrients {
+  calories: NutrientValue
+  protein: NutrientValue
+  fat: NutrientValue
+  carbohydrates: NutrientValue
+  fiber: NutrientValue
+  sugar: NutrientValue
+  iron: NutrientValue
+  zinc: NutrientValue
+  omega3: NutrientValue
+  vitaminD: NutrientValue
+}
+
+type NutrientValue {
+  amount: Float
+  unit: String
+}
+
 
   type Query {
     me: User

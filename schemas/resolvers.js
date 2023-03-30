@@ -58,6 +58,14 @@ const resolvers = {
     foods: async () => {
       return Food.find();
     },
+    // foods: async () => {
+    //   return Food.find()
+    //     .populate('nutrients.calories nutrients.protein nutrients.fat nutrients.carbohydrates nutrients.fiber nutrients.sugar nutrients.iron nutrients.zinc nutrients.omega3 nutrients.vitaminD')
+    //     .select('-__v');
+    // },
+    
+    
+    
   },
   
 
@@ -239,22 +247,55 @@ const resolvers = {
 
       let parsedNutrients = JSON.parse(args.nutrients)
 
+      // console.log(parsedNutrients)
+      console.log(parsedNutrients.calories.amount)
+
       const nutrients = new Nutrients({
-        calories: JSON.stringify(parsedNutrients.calories),
-        protein: JSON.stringify(parsedNutrients.protein),
-        fat: JSON.stringify(parsedNutrients.fat),
-        carbohydrates: JSON.stringify(parsedNutrients.carbohydrates),
-        fiber: JSON.stringify(parsedNutrients.fiber),
-        sugar: JSON.stringify(parsedNutrients.sugar),
-        iron: JSON.stringify(parsedNutrients.iron),
-        zinc: JSON.stringify(parsedNutrients.zinc),
-        omega3: JSON.stringify(parsedNutrients.omega3),
-        vitaminD: JSON.stringify(parsedNutrients.vitaminD)
+        calories: {
+          amount: parsedNutrients.calories ? parsedNutrients.calories.amount : 0,
+          unit: parsedNutrients.calories ? parsedNutrients.calories.unit : ''
+        },
+        protein: {
+          amount: parsedNutrients.protein ? parsedNutrients.protein.amount : 0,
+          unit: parsedNutrients.protein ? parsedNutrients.protein.unit : ''
+        },
+        fat: {
+          amount: parsedNutrients.fat ? parsedNutrients.fat.amount : 0,
+          unit: parsedNutrients.fat ? parsedNutrients.fat.unit : ''
+        },
+        carbohydrates: {
+          amount: parsedNutrients.carbohydrates ? parsedNutrients.carbohydrates.amount : 0,
+          unit: parsedNutrients.carbohydrates ? parsedNutrients.carbohydrates.unit : ''
+        },
+        fiber: {
+          amount: parsedNutrients.fiber ? parsedNutrients.fiber.amount : 0,
+          unit: parsedNutrients.fiber ? parsedNutrients.fiber.unit : ''
+        },
+        sugar: {
+          amount: parsedNutrients.sugar ? parsedNutrients.sugar.amount : 0,
+          unit: parsedNutrients.sugar ? parsedNutrients.sugar.unit : ''
+        },
+        iron: {
+          amount: parsedNutrients.iron ? parsedNutrients.iron.amount : 0,
+          unit: parsedNutrients.iron ? parsedNutrients.iron.unit : ''
+        },
+        zinc: {
+          amount: parsedNutrients.zinc ? parsedNutrients.zinc.amount : 0,
+          unit: parsedNutrients.zinc ? parsedNutrients.zinc.unit : ''
+        },
+        omega3: {
+          amount: parsedNutrients.omega3 ? parsedNutrients.omega3.amount : 0,
+          unit: parsedNutrients.omega3 ? parsedNutrients.omega3.unit : ''
+        },
+        vitaminD: {
+          amount: parsedNutrients.vitaminD ? parsedNutrients.vitaminD.amount : 0,
+          unit: parsedNutrients.vitaminD ? parsedNutrients.vitaminD.unit : ''
+        },
       })
 
       console.log("# - addSubUserEntry CHECK 3")
 
-      console.log(nutrients)
+      // console.log(nutrients)
 
       const entry = new Entry({
         subuserid: args.subuserid,
@@ -270,6 +311,8 @@ const resolvers = {
       });
       await entry.save();
       console.log("# - addSubUserEntry CHECK 4")
+
+      // console.log(entry)
 
 
       const tracker = new Tracker({
@@ -340,6 +383,7 @@ const resolvers = {
     
         console.log("# - deleteEntry CHECK 3")
         console.log(args.id)
+        console.log(args)
     
         for (let i = 0; i < user.subuser.length; i++) {
           if (user.subuser[i]._id == args.subuserid) {

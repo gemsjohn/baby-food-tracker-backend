@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 const { getNutritionDetailsAndFoodGroup, handleIdentifyFoodGroup } = require('./components/GPT/GPT_Generate_Scene');
 const { convertNutrition } = require('./components/GPT/Convert');
 const axios = require('axios');
-const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
+// const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
 const { Query_Foods } = require('./components/GPT/Query_Foods');
 
 const PORT = process.env.PORT || 3001;
@@ -98,12 +98,12 @@ app.post('/query-usda/:prompt', (req, res) => {
           return uniqueFoods;
         }, []);
 
-        res.status(200).json({ result: foods });
+      res.status(200).json({ result: foods });
     })
     .catch((error) => {
       console.log(error);
     });
-  
+
 })
 
 
@@ -114,45 +114,79 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
   console.log("# - STEP 1 USER INPUT:");
   console.log(userInputParsed)
 
-  if (!res.headersSent && userInputParsed.search.description != '') { 
-      console.log("# - STEP 2 MAIN")
-      async function main() {
-        let response;
-        let conversion;
-        let foodNutrients = await Query_Foods(userInputParsed.search.description);
-        
-        if (foodNutrients) {
-          console.log("# - FOOD ITEM EXISTS")
-          response = await handleIdentifyFoodGroup(userInputParsed)
-          console.log(response)
-          foodNutrients = JSON.parse(foodNutrients);
-          conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
-          res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup.group} });
+  if (!res.headersSent && userInputParsed.search.description != '') {
+    console.log("# - STEP 2 MAIN")
+    async function main() {
+      let response;
+      let conversion;
 
-        } else {
-          console.log("# - FOOD ITEM DOES NOT EXIST")
-          response = await getNutritionDetailsAndFoodGroup(userInputParsed);
-          console.log(response)
-          if (response.nutrition.calories.amount) {
-            let foodGroup;
-            if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
-              foodGroup = JSON.stringify(response.foodGroup.group);
-            } else {
-              foodGroup = ''
-            }
-            await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
-            conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
-            console.log("# - PRE-RES-STATUS:")
-            console.log(foodGroup)
-            // res.status(200).json({ result: conversion });
-            res.status(200).json({ result: {conversion: conversion, foodGroup: foodGroup} });
-          } else {
-            res.status(200).json({ result: "not found" });
-          }
-        }
-        
+      let food_data = await Query_Foods(userInputParsed.search.description);
+      if (!food_data) {
+        food_data = await getNutritionDetailsAndFoodGroup(userInputParsed);
       }
-      main();
+
+      console.log(food_data)
+      res.status(200).json({ result: "not found" });
+      // if (food_data.nutrients)
+
+
+
+      // response = await getNutritionDetailsAndFoodGroup(userInputParsed);
+      // console.log(response)
+      // if (response.nutrition.calories.amount) {
+      //   let foodGroup;
+      //   if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
+      //     foodGroup = JSON.stringify(response.foodGroup.group);
+      //   } else {
+      //     foodGroup = ''
+      //   }
+      //   // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
+      //   conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
+      //   console.log("# - PRE-RES-STATUS:")
+      //   console.log(foodGroup)
+      //   // res.status(200).json({ result: conversion });
+      //   res.status(200).json({ result: { conversion: conversion, foodGroup: foodGroup } });
+      // } else {
+      //   res.status(200).json({ result: "not found" });
+      // }
+
+
+
+
+
+
+      // if (foodNutrients) {
+      //   console.log("# - FOOD ITEM EXISTS")
+      //   response = await handleIdentifyFoodGroup(userInputParsed)
+      //   console.log(response)
+      //   foodNutrients = JSON.parse(foodNutrients);
+      //   conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
+      //   res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup.group} });
+
+      // } else {
+      //   console.log("# - FOOD ITEM DOES NOT EXIST")
+      //   response = await getNutritionDetailsAndFoodGroup(userInputParsed);
+      //   console.log(response)
+      //   if (response.nutrition.calories.amount) {
+      //     let foodGroup;
+      //     if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
+      //       foodGroup = JSON.stringify(response.foodGroup.group);
+      //     } else {
+      //       foodGroup = ''
+      //     }
+      //     // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
+      //     conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
+      //     console.log("# - PRE-RES-STATUS:")
+      //     console.log(foodGroup)
+      //     // res.status(200).json({ result: conversion });
+      //     res.status(200).json({ result: {conversion: conversion, foodGroup: foodGroup} });
+      //   } else {
+      //     res.status(200).json({ result: "not found" });
+      //   }
+      // }
+
+    }
+    main();
   }
 
 });
