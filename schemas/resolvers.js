@@ -244,6 +244,7 @@ const resolvers = {
       console.log("# - addSubUserEntry CHECK 2")
 
       let upperCaseItem = args.item.toUpperCase();
+      // console.log(args.nutrients)
 
       let parsedNutrients = JSON.parse(args.nutrients)
 
@@ -389,6 +390,8 @@ const resolvers = {
           if (user.subuser[i]._id == args.subuserid) {
             console.log("# - deleteEntry CHECK 4")
             let subuser = user.subuser[i]
+            console.log(args.id)
+
             console.log(subuser._id)
     
             for (let j = 0; j < subuser.tracker.length; j++) {

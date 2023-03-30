@@ -120,35 +120,26 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
       let response;
       let conversion;
 
-      let food_data = await Query_Foods(userInputParsed.search.description);
-      if (!food_data) {
-        food_data = await getNutritionDetailsAndFoodGroup(userInputParsed);
+
+
+      response = await getNutritionDetailsAndFoodGroup(userInputParsed);
+      console.log(response)
+      if (response.nutrition.calories.amount) {
+        let foodGroup;
+        if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
+          foodGroup = JSON.stringify(response.foodGroup.group);
+        } else {
+          foodGroup = ''
+        }
+        // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
+        conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
+        console.log("# - PRE-RES-STATUS:")
+        console.log(foodGroup)
+        // res.status(200).json({ result: conversion });
+        res.status(200).json({ result: { conversion: conversion, foodGroup: foodGroup } });
+      } else {
+        res.status(200).json({ result: "not found" });
       }
-
-      console.log(food_data)
-      res.status(200).json({ result: "not found" });
-      // if (food_data.nutrients)
-
-
-
-      // response = await getNutritionDetailsAndFoodGroup(userInputParsed);
-      // console.log(response)
-      // if (response.nutrition.calories.amount) {
-      //   let foodGroup;
-      //   if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
-      //     foodGroup = JSON.stringify(response.foodGroup.group);
-      //   } else {
-      //     foodGroup = ''
-      //   }
-      //   // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
-      //   conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
-      //   console.log("# - PRE-RES-STATUS:")
-      //   console.log(foodGroup)
-      //   // res.status(200).json({ result: conversion });
-      //   res.status(200).json({ result: { conversion: conversion, foodGroup: foodGroup } });
-      // } else {
-      //   res.status(200).json({ result: "not found" });
-      // }
 
 
 
