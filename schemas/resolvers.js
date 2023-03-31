@@ -435,7 +435,6 @@ const resolvers = {
         }
     
         console.log("# - updateSubUserAllergies CHECK 3")
-    
         for (let i = 0; i < user.subuser.length; i++) {
           if (user.subuser[i]._id == args.subuserid) {
             console.log("# - updateSubUserAllergies CHECK 4")

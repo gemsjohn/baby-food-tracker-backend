@@ -23,8 +23,9 @@ const typeDefs = gql`
   type SubUser {
     _id: ID
     subusername: String
-    tracker: [Tracker]
     allergy: [String]
+    tracker: [Tracker]
+    meal: [Meal]
   }
 
   type Tracker {
@@ -70,6 +71,11 @@ type Nutrients {
 type NutrientValue {
   amount: Float
   unit: String
+}
+
+type Meal {
+  _id: ID
+  title: String
 }
 
 

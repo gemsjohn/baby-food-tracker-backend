@@ -7,10 +7,14 @@ const SubUserSchema = new Schema(
       type: String,
       required: true
     },
-    tracker: [Tracker],
     allergy: {
       type: [String]
     },
+    tracker: [Tracker],
+    meal: {
+      type: [String]
+    }
+    
   },
   
   // set this to use virtual below
