@@ -27,6 +27,8 @@ function convertNutrition(nutrition, quantity, measurement) {
                 return parseFloat(convertGrams.find(obj => obj.size === "ounces").grams) / gramsPerServing;
             case "milliliter":
                 return parseFloat(convertGrams.find(obj => obj.size === "milliliter").grams) / gramsPerServing;
+            // case "minutes":
+            //     return 0
             default:
                 return 0;
         }
@@ -54,6 +56,8 @@ function convertNutrition(nutrition, quantity, measurement) {
                 return parseFloat(convertGrams.find(obj => obj.size === "ounces").grams) / gramsPerServing;
             case "milliliter":
                 return parseFloat(convertGrams.find(obj => obj.size === "milliliter").grams) / gramsPerServing;
+            // case "minutes":
+            //         return 0
             default:
                 return 0;
         }

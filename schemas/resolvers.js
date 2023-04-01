@@ -10,6 +10,7 @@ const randomBytes = require('randombytes');
 const nodemailer = require("nodemailer");
 const Sequelize = require('sequelize');
 const GenerateCryptoRandomString = require('../CryptoRandomString');
+const { convertNutrition } = require('../components/GPT/Convert'); // ./components/GPT/Convert
 
 const resolvers = {
   Query: {
@@ -63,11 +64,11 @@ const resolvers = {
     //     .populate('nutrients.calories nutrients.protein nutrients.fat nutrients.carbohydrates nutrients.fiber nutrients.sugar nutrients.iron nutrients.zinc nutrients.omega3 nutrients.vitaminD')
     //     .select('-__v');
     // },
-    
-    
-    
+
+
+
   },
-  
+
 
   Mutation: {
     login: async (parent, { username, password, role }) => {
@@ -122,7 +123,7 @@ const resolvers = {
       }
       console.log("# - addSubUser CHECK 3")
 
-      if (!user.premium) {
+      if (!user.premium && user.subuser.length > 0) {
         throw new ApolloError('Premium service false', 'ADD_SUBUSER_FAILED')
       }
       console.log("ADD SUBUSER")
@@ -202,7 +203,7 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
-    
+
     updateUserPassword: async (parent, { password }, context) => {
       console.log(context.user)
       try {
@@ -242,55 +243,65 @@ const resolvers = {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
       }
       console.log("# - addSubUserEntry CHECK 2")
-
+      console.log(args.item)
       let upperCaseItem = args.item.toUpperCase();
       // console.log(args.nutrients)
 
       let parsedNutrients = JSON.parse(args.nutrients)
 
-      // console.log(parsedNutrients)
-      console.log(parsedNutrients.calories.amount)
+      function parseString(inputString) {
+        const parts = inputString.split(" ");
+        const quantity = parseFloat(parts[0]);
+        const measurement = parts[1];
+      
+        return { quantity, measurement };
+      }
+
+      const { quantity, measurement } = parseString(args.amount);
+
+      conversion = convertNutrition(parsedNutrients, quantity, measurement);
+      console.log(conversion.calories.amount)
 
       const nutrients = new Nutrients({
         calories: {
-          amount: parsedNutrients.calories ? parsedNutrients.calories.amount : 0,
-          unit: parsedNutrients.calories ? parsedNutrients.calories.unit : ''
+          amount: conversion.calories ? conversion.calories.amount : 0,
+          unit: conversion.calories ? conversion.calories.unit : ''
         },
         protein: {
-          amount: parsedNutrients.protein ? parsedNutrients.protein.amount : 0,
-          unit: parsedNutrients.protein ? parsedNutrients.protein.unit : ''
+          amount: conversion.protein ? conversion.protein.amount : 0,
+          unit: conversion.protein ? conversion.protein.unit : ''
         },
         fat: {
-          amount: parsedNutrients.fat ? parsedNutrients.fat.amount : 0,
-          unit: parsedNutrients.fat ? parsedNutrients.fat.unit : ''
+          amount: conversion.fat ? conversion.fat.amount : 0,
+          unit: conversion.fat ? conversion.fat.unit : ''
         },
         carbohydrates: {
-          amount: parsedNutrients.carbohydrates ? parsedNutrients.carbohydrates.amount : 0,
-          unit: parsedNutrients.carbohydrates ? parsedNutrients.carbohydrates.unit : ''
+          amount: conversion.carbohydrates ? conversion.carbohydrates.amount : 0,
+          unit: conversion.carbohydrates ? conversion.carbohydrates.unit : ''
         },
         fiber: {
-          amount: parsedNutrients.fiber ? parsedNutrients.fiber.amount : 0,
-          unit: parsedNutrients.fiber ? parsedNutrients.fiber.unit : ''
+          amount: conversion.fiber ? conversion.fiber.amount : 0,
+          unit: conversion.fiber ? conversion.fiber.unit : ''
         },
         sugar: {
-          amount: parsedNutrients.sugar ? parsedNutrients.sugar.amount : 0,
-          unit: parsedNutrients.sugar ? parsedNutrients.sugar.unit : ''
+          amount: conversion.sugar ? conversion.sugar.amount : 0,
+          unit: conversion.sugar ? conversion.sugar.unit : ''
         },
         iron: {
-          amount: parsedNutrients.iron ? parsedNutrients.iron.amount : 0,
-          unit: parsedNutrients.iron ? parsedNutrients.iron.unit : ''
+          amount: conversion.iron ? conversion.iron.amount : 0,
+          unit: conversion.iron ? conversion.iron.unit : ''
         },
         zinc: {
-          amount: parsedNutrients.zinc ? parsedNutrients.zinc.amount : 0,
-          unit: parsedNutrients.zinc ? parsedNutrients.zinc.unit : ''
+          amount: conversion.zinc ? conversion.zinc.amount : 0,
+          unit: conversion.zinc ? conversion.zinc.unit : ''
         },
         omega3: {
-          amount: parsedNutrients.omega3 ? parsedNutrients.omega3.amount : 0,
-          unit: parsedNutrients.omega3 ? parsedNutrients.omega3.unit : ''
+          amount: conversion.omega3 ? conversion.omega3.amount : 0,
+          unit: conversion.omega3 ? conversion.omega3.unit : ''
         },
         vitaminD: {
-          amount: parsedNutrients.vitaminD ? parsedNutrients.vitaminD.amount : 0,
-          unit: parsedNutrients.vitaminD ? parsedNutrients.vitaminD.unit : ''
+          amount: conversion.vitaminD ? conversion.vitaminD.amount : 0,
+          unit: conversion.vitaminD ? conversion.vitaminD.unit : ''
         },
       })
 
@@ -343,11 +354,11 @@ const resolvers = {
             subusername: subuser.subusername,
             tracker: [...user.subuser[subuserIndex].tracker, tracker],
             allergy: args.allergy === "Mild" || args.allergy === 'Strong' ?
-                !allergies.includes(upperCaseItem) ?
-                  [...user.subuser[subuserIndex].allergy, upperCaseItem] :
-                  user.subuser[subuserIndex].allergy
-                :
+              !allergies.includes(upperCaseItem) ?
+                [...user.subuser[subuserIndex].allergy, upperCaseItem] :
                 user.subuser[subuserIndex].allergy
+              :
+              user.subuser[subuserIndex].allergy
           };
 
           // Save the updated user object
@@ -375,17 +386,17 @@ const resolvers = {
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
         }
-    
+
         console.log("# - deleteEntry CHECK 2")
         const user = await User.findById({ _id: context.user._id })
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
-    
+
         console.log("# - deleteEntry CHECK 3")
         console.log(args.id)
         console.log(args)
-    
+
         for (let i = 0; i < user.subuser.length; i++) {
           if (user.subuser[i]._id == args.subuserid) {
             console.log("# - deleteEntry CHECK 4")
@@ -393,15 +404,15 @@ const resolvers = {
             console.log(args.id)
 
             console.log(subuser._id)
-    
+
             for (let j = 0; j < subuser.tracker.length; j++) {
               let trackerObject = subuser.tracker[j]
               let trackerObjectID = trackerObject._id;
-    
+
               if (trackerObjectID == args.id) {
                 console.log(trackerObjectID)
                 await User.findByIdAndUpdate(
-                  { _id: user._id},
+                  { _id: user._id },
                   {
                     $pull: {
                       "subuser.$[i].tracker": {
@@ -427,13 +438,13 @@ const resolvers = {
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
         }
-    
+
         console.log("# - updateSubUserAllergies CHECK 2")
         const user = await User.findById({ _id: context.user._id })
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
-    
+
         console.log("# - updateSubUserAllergies CHECK 3")
         for (let i = 0; i < user.subuser.length; i++) {
           if (user.subuser[i]._id == args.subuserid) {
@@ -442,14 +453,14 @@ const resolvers = {
             console.log(subuser._id)
 
 
-    
+
             for (let j = 0; j < subuser.allergy.length; j++) {
               let allergy = subuser.allergy[j]
 
               if (allergy == args.item) {
 
                 await User.findByIdAndUpdate(
-                  { _id: user._id},
+                  { _id: user._id },
                   {
                     $pull: {
                       "subuser.$[i].allergy": args.item
@@ -469,8 +480,8 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
-    
-    
+
+
 
     requestReset: async (parent, { email }, context) => {
       let lowerCaseEmail = email.toLowerCase();
@@ -683,7 +694,7 @@ const resolvers = {
           console.log("# - deleteSubUser CHECK 4")
           // const subuser = await SubUser.findOne({ _id: args.subuserid })
           // let subuser;
-          
+
           for (let i = 0; i < user.subuser.length; i++) {
             // subuser = await SubUser.findById({ _id: args.subuserid })
 
@@ -694,7 +705,7 @@ const resolvers = {
                 console.log("# - deleteSubUser CHECK 5 : " + i)
                 await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
               }
-    
+
               await User.findByIdAndUpdate(
                 { _id: args.userid },
                 {
@@ -707,7 +718,7 @@ const resolvers = {
 
             }
           }
-          
+
 
         } else {
           return null;
@@ -722,12 +733,12 @@ const resolvers = {
     //     if (!context.user) {
     //       throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     //     }
-    
+
     //     const user = await User.findById({ _id: context.user._id })
     //     if (!user) {
     //       throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
     //     }
-    
+
     //     console.log("deleteEntry")
     //     console.log(args.id)
 
@@ -735,7 +746,7 @@ const resolvers = {
     //     if (localID != args.userid) {
     //       throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
     //     }
-    
+
     //     // Remove it using $pull
     //       await SubUser.updateOne(
     //         { _id: args.subuserid },
@@ -750,7 +761,7 @@ const resolvers = {
       let foodItem = args.item.toUpperCase();
 
       const food = await Food.findOne({ item: foodItem })
-      console.log("# - food:") 
+      console.log("# - food:")
       console.log(food)
       if (!food) {
         console.log("# - CREATE FOOD")
@@ -762,46 +773,86 @@ const resolvers = {
           }
         );
       }
-      
+
       return { food };
     },
     editFood: async (parent, args, context) => {
-      const { foodid, item, nutritioncategory, specificnutrientdetail, foodGroup } = args;
-    
+      const { foodid, item, nutritioncategory, amount, unit, foodGroup } = args;
+
       // Find the food item to edit
-      const foodItem = await Food.findById(foodid);
+      let foodItem = await Food.findById(foodid);
       if (!foodItem) {
         throw new Error(`Food item with id ${foodid} not found`);
       }
+      console.log("# - editFood")
+      if (nutritioncategory) {
+        // Update the food item with the new nutrients object
+        foodItem = await Food.findByIdAndUpdate(
+          foodid,
+          {
+            $set:
+            {
+              nutrients: {
+                calories: {
+                  amount: nutritioncategory.toLowerCase() == "calories" ? amount : foodItem.nutrients.calories.amount,
+                  unit: nutritioncategory.toLowerCase() == "calories" ? unit : foodItem.nutrients.calories.unit
+                },
+                protein: {
+                  amount: nutritioncategory.toLowerCase() == "protein" ? amount : foodItem.nutrients.protein.amount,
+                  unit: nutritioncategory.toLowerCase() == "protein" ? unit : foodItem.nutrients.protein.unit
+                },
+                fat: {
+                  amount: nutritioncategory.toLowerCase() == "fat" ? amount : foodItem.nutrients.fat.amount,
+                  unit: nutritioncategory.toLowerCase() == "fat" ? unit : foodItem.nutrients.fat.unit
+                },
+                carbohydrates: {
+                  amount: nutritioncategory.toLowerCase() == "carbohydrates" ? amount : foodItem.nutrients.carbohydrates.amount,
+                  unit: nutritioncategory.toLowerCase() == "carbohydrates" ? unit : foodItem.nutrients.carbohydrates.unit
+                },
+                fiber: {
+                  amount: nutritioncategory.toLowerCase() == "fiber" ? amount : foodItem.nutrients.fiber.amount,
+                  unit: nutritioncategory.toLowerCase() == "fiber" ? unit : foodItem.nutrients.fiber.unit
+                },
+                sugar: {
+                  amount: nutritioncategory.toLowerCase() == "sugar" ? amount : foodItem.nutrients.sugar.amount,
+                  unit: nutritioncategory.toLowerCase() == "sugar" ? unit : foodItem.nutrients.sugar.unit
+                },
+                iron: {
+                  amount: nutritioncategory.toLowerCase() == "iron" ? amount : foodItem.nutrients.iron.amount,
+                  unit: nutritioncategory.toLowerCase() == "iron" ? unit : foodItem.nutrients.iron.unit
+                },
+                zinc: {
+                  amount: nutritioncategory.toLowerCase() == "zinc" ? amount : foodItem.nutrients.zinc.amount,
+                  unit: nutritioncategory.toLowerCase() == "zinc" ? unit : foodItem.nutrients.zinc.unit
+                },
+                omega3: {
+                  amount: nutritioncategory.toLowerCase() == "omega3" ? amount : foodItem.nutrients.omega3.amount,
+                  unit: nutritioncategory.toLowerCase() == "omega3" ? unit : foodItem.nutrients.omega3.unit
+                },
+                vitaminD: {
+                  amount: nutritioncategory.toLowerCase() == "vitamind" ? amount : foodItem.nutrients.vitaminD.amount,
+                  unit: nutritioncategory.toLowerCase() == "vitamind" ? unit : foodItem.nutrients.vitaminD.unit
+                }
+              }
+            }
+          },
+          { new: true }
+        );
 
-    
-      // Create a copy of the nutrients object and update only the specified subcategory
-      
-      let foodUpdate = foodItem.nutrients;
-      foodItem.nutrients[nutritioncategory] = specificnutrientdetail;
+        console.log(" - - - - - - - - - -  ")
+      } else {
+        console.log(nutritioncategory + " null");
+      }
 
-      
-    
-      // Update the food item in the database
-      const updatedFoodItem = await Food.findByIdAndUpdate(
-        foodid,
-        { 
-          item, 
-          nutrients: foodUpdate,
-          foodGroup 
-        },
-        { new: true }
-      );
-      return updatedFoodItem;
+      // return foodItem;
     },
-    
-    
+
     deleteFood: async (parent, args, context) => {
       try {
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
         }
-    
+
         const user = await User.findById({ _id: context.user._id })
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
@@ -809,11 +860,11 @@ const resolvers = {
         console.log("before delete food")
         if (user.role[0] = "Admin") {
           console.log("deleteFood")
-    
+
           // Remove it using $pull
           await Food.findByIdAndDelete({ _id: args.id })
         }
-        
+
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
@@ -848,10 +899,10 @@ const resolvers = {
       return true;
 
     },
-    
+
 
   },
-  
+
 
 };
 

@@ -51,8 +51,9 @@ const typeDefs = gql`
   type Food {
   _id: ID
   item: String
-  nutrients: Nutrients
   foodGroup: String
+  nutrients: Nutrients
+  
 }
 
 type Nutrients {
@@ -174,9 +175,9 @@ type Meal {
 
     editFood(
       foodid: String
-      item: String
       nutritioncategory: String
-      specificnutrientdetail: String
+      amount: String
+      unit: String
       foodGroup: String
     ): Food
 
