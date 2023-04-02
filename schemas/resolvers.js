@@ -648,25 +648,33 @@ const resolvers = {
     },
     deleteUser: async (parent, args, context) => {
       try {
+        console.log("# - DELETE USER CHECK 1")
         if (!context.user) {
           throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
         }
 
+        console.log("# - DELETE USER CHECK 2")
         const user = await User.findById({ _id: context.user._id })
         if (!user) {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
 
-        console.log("deleteUser")
-
+        console.log("# - DELETE USER CHECK 3")
+        console.log(args)
         if (context.user._id == args.id || context.user.role[0] == 'Admin') {
-          const user = await User.findOne({ _id: args.id })
+          console.log("# - DELETE USER CHECK 4")
+          const user = await User.findById({ _id: args.id })
+          console.log(user)
 
-          for (let i = 0; i < user.tracker.length; i++) {
-            await Tracker.findByIdAndDelete({ _id: user.tracker[i]._id })
+          if(user.tracker) {
+            console.log("# - DELETE USER CHECK 4 b")
+            for (let i = 0; i < user.tracker.length; i++) {
+              await Tracker.findByIdAndDelete({ _id: user.tracker[i]._id })
+            }
           }
+          console.log("# - DELETE USER CHECK 5")
 
-          await User.findByIdAndDelete({ _id: args.id })
+          await User.findByIdAndDelete({ _id: user._id })
         } else {
           return null;
         }
@@ -697,6 +705,10 @@ const resolvers = {
 
           for (let i = 0; i < user.subuser.length; i++) {
             // subuser = await SubUser.findById({ _id: args.subuserid })
+            console.log("= = = = = = ")
+            console.log(user.subuser[i]._id)
+            console.log(args.subuserid)
+            console.log("= = = = = = ")
 
             if (user.subuser[i]._id == args.subuserid) {
               let subuser = user.subuser[i]

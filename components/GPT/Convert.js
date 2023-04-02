@@ -11,7 +11,8 @@ function convertNutrition(nutrition, quantity, measurement) {
             { size: "tablespoons", grams: "14.8", unit: "g" },
             { size: "teaspoons", grams: "4.9", unit: "g" },
             { size: "ounces", grams: "28.35", unit: "g" },
-            { size: "milliliter", grams: "0.001", unit: "g" }
+            { size: "milliliters", grams: "0.001", unit: "g" },
+            {size: "minutes", grams: "7.5", unit: "g" }
         ];
 
         const gramsPerServing = parseFloat(convertGrams.find(obj => obj.size === "cups").grams);
@@ -25,10 +26,10 @@ function convertNutrition(nutrition, quantity, measurement) {
                 return parseFloat(convertGrams.find(obj => obj.size === "teaspoons").grams) / gramsPerServing;
             case "ounces":
                 return parseFloat(convertGrams.find(obj => obj.size === "ounces").grams) / gramsPerServing;
-            case "milliliter":
-                return parseFloat(convertGrams.find(obj => obj.size === "milliliter").grams) / gramsPerServing;
-            // case "minutes":
-            //     return 0
+            case "milliliters":
+                return parseFloat(convertGrams.find(obj => obj.size === "milliliters").grams) / gramsPerServing;
+            case "minutes":
+                return parseFloat(convertGrams.find(obj => obj.size === "minutes").grams) / gramsPerServing;
             default:
                 return 0;
         }
@@ -40,7 +41,8 @@ function convertNutrition(nutrition, quantity, measurement) {
             { size: "tablespoons", grams: "14.8", unit: "g" },
             { size: "teaspoons", grams: "4.9", unit: "g" },
             { size: "ounces", grams: "28.35", unit: "g" },
-            { size: "milliliter", grams: "0.001", unit: "g" }
+            { size: "milliliters", grams: "0.001", unit: "g" },
+            {size: "minutes", grams: "7.5", unit: "g" }
         ];
 
         const gramsPerServing = parseFloat(convertGrams.find(obj => obj.size === "cups").grams);
@@ -54,10 +56,10 @@ function convertNutrition(nutrition, quantity, measurement) {
                 return parseFloat(convertGrams.find(obj => obj.size === "teaspoons").grams) / gramsPerServing;
             case "ounces":
                 return parseFloat(convertGrams.find(obj => obj.size === "ounces").grams) / gramsPerServing;
-            case "milliliter":
-                return parseFloat(convertGrams.find(obj => obj.size === "milliliter").grams) / gramsPerServing;
-            // case "minutes":
-            //         return 0
+            case "milliliters":
+                return parseFloat(convertGrams.find(obj => obj.size === "milliliters").grams) / gramsPerServing;
+            case "minutes":
+                return parseFloat(convertGrams.find(obj => obj.size === "minutes").grams) / gramsPerServing;
             default:
                 return 0;
         }
