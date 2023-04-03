@@ -16,8 +16,13 @@ const typeDefs = gql`
     resetToken: String
     resetTokenExpiry: String
     currentVersion: String
-    premium: Boolean
+    premium: Premium
     subuser: [SubUser]
+  }
+
+  type Premium {
+    status: Boolean,
+    expiration: String
   }
 
   type SubUser {
@@ -99,7 +104,7 @@ type Meal {
       username: String!
       email: String!
       password: String!
-      premium: Boolean
+      premium: String
       subuser: [String]
     ): Auth
 
@@ -109,7 +114,8 @@ type Meal {
     ): User
     
     updatePremium(
-      premium: Boolean
+      status: Boolean,
+      expiration: String
     ): User
     
     updateUserPassword(

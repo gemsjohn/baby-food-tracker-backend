@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 
 const Tracker = require('./Tracker').schema;
 const SubUser = require('./SubUser').schema;
+const Premium = require('./Premium').schema;
 
 
 
@@ -37,10 +38,7 @@ const UserSchema = new Schema(
       type: String,
       default: '1.0.0'
     },
-    premium: {
-      type: Boolean,
-      default: false
-    },
+    premium: Premium,
     subuser: [SubUser]
   },
   

@@ -103,7 +103,10 @@ const resolvers = {
           email: filteredEmail,
           username: filteredUsername,
           password: args.password,
-          premium: false,
+          premium: {
+            status: false,
+            expiration: ''
+          },
           subuser: []
         }
       );
@@ -190,11 +193,26 @@ const resolvers = {
           throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
         }
         console.log("updatePremium")
+
+        function convertToReadableTime(timestamp) {
+          const utcTime = moment.utc(timestamp);
+          const localTime = utcTime.local();
+          return localTime.format('MMMM Do YYYY, h:mm:ss a');
+        }
+
+        const readableTime = convertToReadableTime(args.expiration);
+        console.log("# - Expiration: " + readableTime);
+
         if (context.user) {
           await User.findByIdAndUpdate(
             { _id: context.user._id },
             {
-              premium: args.premium
+              $set: {
+                premium: {
+                  status: args.status,
+                  expiration: readableTime
+                }
+              }
             },
             { new: true }
           )
