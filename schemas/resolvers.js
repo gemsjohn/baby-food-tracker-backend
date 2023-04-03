@@ -182,6 +182,27 @@ const resolvers = {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
     },
+    updateCurrentVersion: async (parents, args, context) => {
+        if (context.user.role[0] != 'Admin') {
+          console.log("CHECK 1")
+          throw new ApolloError('Unauthorized access', 'AUTHENTICATION_FAILED')
+        } else {
+          console.log("CHECK 2")
+        }
+        const user = await User.find();
+        for (let i = 0; i < user.length; i ++) {
+          await User.findByIdAndUpdate(
+            {_id: user[i]._id},
+            {
+              $set: {
+                currentVersion: args.currentVersion
+              }
+            },
+            { new: true }
+          )
+        }
+     
+    },
     updatePremium: async (parents, args, context) => {
       try {
         if (!context.user) {

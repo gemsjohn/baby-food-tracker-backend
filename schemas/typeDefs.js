@@ -117,6 +117,10 @@ type Meal {
       status: Boolean,
       expiration: String
     ): User
+
+    updateCurrentVersion(
+      currentVersion: String
+    ): User
     
     updateUserPassword(
       password: String
