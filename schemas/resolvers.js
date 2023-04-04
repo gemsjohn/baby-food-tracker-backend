@@ -59,13 +59,13 @@ const resolvers = {
     foods: async () => {
       return Food.find();
     },
-    // foods: async () => {
-    //   return Food.find()
-    //     .populate('nutrients.calories nutrients.protein nutrients.fat nutrients.carbohydrates nutrients.fiber nutrients.sugar nutrients.iron nutrients.zinc nutrients.omega3 nutrients.vitaminD')
-    //     .select('-__v');
-    // },
-
-
+    food: async (parent, args, context) => {
+      if (context.user.role[0] === 'Admin') {
+        let foodItem = args.item;
+        foodItem =  foodItem.toUpperCase();
+        return Food.findOne({ item: foodItem })
+      }
+    },
 
   },
 
@@ -287,7 +287,7 @@ const resolvers = {
       // console.log(args.nutrients)
 
       let parsedNutrients = JSON.parse(args.nutrients)
-
+      console.log(parsedNutrients)
       function parseString(inputString) {
         const parts = inputString.split(" ");
         const quantity = parseFloat(parts[0]);
@@ -298,10 +298,15 @@ const resolvers = {
 
       const { quantity, measurement } = parseString(args.amount);
 
-      conversion = convertNutrition(parsedNutrients, quantity, measurement);
-      console.log(conversion.calories.amount)
+      let conversion = convertNutrition(parsedNutrients, quantity, measurement, args.foodInDb);
+      console.log(conversion)
+      // console.log(conversion.calories.amount)
 
       const nutrients = new Nutrients({
+        servingWeight: {
+          amount: parsedNutrients.servingWeight ? parsedNutrients.servingWeight.amount : 0,
+          unit: parsedNutrients.servingWeight ? parsedNutrients.servingWeight.unit : ''
+        },
         calories: {
           amount: conversion.calories ? conversion.calories.amount : 0,
           unit: conversion.calories ? conversion.calories.unit : ''
@@ -411,7 +416,7 @@ const resolvers = {
         console.log("# - ADDING " + upperCaseItem + " TO THE FOOD DB")
         const food = new Food({
           item: upperCaseItem,
-          nutrients: nutrients,
+          nutrients: parsedNutrients.nutrients,
           foodGroup: args.foodGroup,
         });
         await food.save();
@@ -433,7 +438,6 @@ const resolvers = {
         }
 
         console.log("# - deleteEntry CHECK 3")
-        console.log(args.id)
         console.log(args)
 
         for (let i = 0; i < user.subuser.length; i++) {
@@ -467,6 +471,46 @@ const resolvers = {
             }
           }
         }
+
+        if (context.user.role[0] == 'Admin') {
+          console.log("# - deleteEntry ADMIN")
+          const user = await User.findById({ _id: args.userid })
+
+          for (let i = 0; i < user.subuser.length; i++) {
+
+            if (user.subuser[i]._id == args.subuserid) {
+              let subuser = user.subuser[i];
+              console.log(subuser)
+
+              for (let j = 0; j < subuser.tracker.length; j++) {
+                let trackerObject = subuser.tracker[j]
+                let trackerObjectID = trackerObject._id;
+    
+                if (trackerObjectID == args.id) {
+                  console.log(trackerObjectID)
+                  await User.findByIdAndUpdate(
+                    { _id: user._id },
+                    {
+                      $pull: {
+                        "subuser.$[i].tracker": {
+                          _id: args.id
+                        }
+                      }
+                    },
+                    {
+                      arrayFilters: [{ "i._id": subuser._id }]
+                    }
+                  )
+                }
+              }
+
+            }
+          }
+
+          
+
+        }
+        
       } catch (err) {
         throw new ApolloError('An error occurred while processing the request', 'PROCESSING_ERROR')
       }
@@ -739,36 +783,37 @@ const resolvers = {
 
         if (context.user._id == args.userid || context.user.role[0] == 'Admin') {
           console.log("# - deleteSubUser CHECK 4")
-          // const subuser = await SubUser.findOne({ _id: args.subuserid })
-          // let subuser;
 
-          for (let i = 0; i < user.subuser.length; i++) {
-            // subuser = await SubUser.findById({ _id: args.subuserid })
-            console.log("= = = = = = ")
-            console.log(user.subuser[i]._id)
-            console.log(args.subuserid)
-            console.log("= = = = = = ")
+          await User.findByIdAndUpdate(
+            { _id: args.userid },
+            {
+              subuser: []
+            },
+            { new: true }
+          );
 
-            if (user.subuser[i]._id == args.subuserid) {
-              let subuser = user.subuser[i]
+          // for (let i = 0; i < user.subuser.length; i++) {
+          //   if (user.subuser[i]._id == args.subuserid) {
+          //     let subuser = user.subuser[i]
 
-              for (let i = 0; i < subuser.tracker.length; i++) {
-                console.log("# - deleteSubUser CHECK 5 : " + i)
-                await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
-              }
+          //     // for (let i = 0; i < subuser.tracker.length; i++) {
+          //     //   console.log("# - deleteSubUser CHECK 5 : " + i)
+          //     //   await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
+          //     // }
+          //     console.log("# - deleteSubUser CHECK 5")
+          //     console.log(subuser)
+          //     await User.findByIdAndUpdate(
+          //       { _id: args.userid },
+          //       {
+          //         $pull: {
+          //           subuser: subuser,
+          //         },
+          //       },
+          //       { new: true }
+          //     );
 
-              await User.findByIdAndUpdate(
-                { _id: args.userid },
-                {
-                  $pull: {
-                    subuser: subuser,
-                  },
-                },
-                { new: true }
-              );
-
-            }
-          }
+          //   }
+          // }
 
 
         } else {
@@ -844,6 +889,10 @@ const resolvers = {
             $set:
             {
               nutrients: {
+                servingWeight: {
+                  amount: nutritioncategory.toLowerCase() == "servingweight" ? amount : foodItem.nutrients.servingWeight.amount,
+                  unit: nutritioncategory.toLowerCase() == "servingweight" ? unit : foodItem.nutrients.servingWeight.unit
+                },
                 calories: {
                   amount: nutritioncategory.toLowerCase() == "calories" ? amount : foodItem.nutrients.calories.amount,
                   unit: nutritioncategory.toLowerCase() == "calories" ? unit : foodItem.nutrients.calories.unit
@@ -891,8 +940,21 @@ const resolvers = {
         );
 
         console.log(" - - - - - - - - - -  ")
-      } else {
-        console.log(nutritioncategory + " null");
+      }
+      if (foodGroup) {
+        function removeTrailingSpaces(str) {
+          return str.replace(/\s+$/, '');
+        }
+        let foodGroup_filtered = removeTrailingSpaces(foodGroup);
+        foodItem = await Food.findByIdAndUpdate(
+          foodid,
+          {
+            $set: {
+              foodGroup: foodGroup_filtered.toLowerCase()
+            }
+          },
+          { new: true }
+        )
       }
 
       // return foodItem;

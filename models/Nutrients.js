@@ -2,6 +2,10 @@ const { Schema, model } = require('mongoose');
 
 const NutrientsSchema = new Schema(
   {
+    servingWeight: {
+      amount: Number,
+      unit: String
+    },
     calories: {
       amount: Number,
       unit: String
@@ -41,7 +45,8 @@ const NutrientsSchema = new Schema(
     vitaminD: {
       amount: Number,
       unit: String
-    }
+    },
+    
   },
   
   // set this to use virtual below

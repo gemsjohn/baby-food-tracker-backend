@@ -31,6 +31,9 @@ const EntrySchema = new Schema(
     },
     allergy: {
       type: String
+    },
+    foodInDb: {
+      type: String
     }
   },
   

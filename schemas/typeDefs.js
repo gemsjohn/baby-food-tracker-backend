@@ -62,6 +62,7 @@ const typeDefs = gql`
 }
 
 type Nutrients {
+  servingWeight: NutrientValue
   calories: NutrientValue
   protein: NutrientValue
   fat: NutrientValue
@@ -71,7 +72,7 @@ type Nutrients {
   iron: NutrientValue
   zinc: NutrientValue
   omega3: NutrientValue
-  vitaminD: NutrientValue
+  vitaminD: NutrientValue,
 }
 
 type NutrientValue {
@@ -91,6 +92,7 @@ type Meal {
     user(_id: ID!): User
     trackers(echo: String): [Tracker]
     foods: [Food]
+    food(item: String): Food
   }
 
   type Mutation {
@@ -149,6 +151,7 @@ type Meal {
     ): SubUser
 
     addNutrients(
+      servingWeight: String
       calories: String
       protein: String
       fat: String
@@ -172,9 +175,10 @@ type Meal {
       nutrients: [String]
       foodGroup: String
       allergy: String
+      foodInDb: Boolean
     ): Entry
 
-    deleteEntry(id: ID!, subuserid: String): String
+    deleteEntry(id: ID!, userid: String, subuserid: String): String
     deleteSubUser(userid: ID!, subuserid: ID!): String
 
     addFood(

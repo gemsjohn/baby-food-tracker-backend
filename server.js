@@ -9,7 +9,7 @@ const { authMiddleware } = require('./utils/auth');
 const db = require('./config/connection');
 const jwt = require('jsonwebtoken');
 const { getNutritionDetailsAndFoodGroup, handleIdentifyFoodGroup } = require('./components/GPT/GPT_Generate_Scene');
-const { convertNutrition } = require('./components/GPT/Convert');
+const { convertNutrition } = require('./components/GPT/Convert_v0');
 const axios = require('axios');
 // const { Mutation_Add_Food } = require('./components/GPT/Mutation_Add_Food');
 const { Query_Foods } = require('./components/GPT/Query_Foods');
@@ -72,26 +72,62 @@ app.get('/ping', (req, res) => {
   res.send({ data: 'Success' })
 })
 
-app.post('/query-usda/:prompt', (req, res) => {
+// app.post('/query-usda/:prompt', (req, res) => {
+//   const userInput = req.params.prompt;
+//   let userInputParsed = JSON.parse(decodeURIComponent(userInput));
+//   console.log(userInputParsed)
+
+//   axios.get(`https://api.nal.usda.gov/fdc/v1/search?api_key=${process.env.USDA_API_KEY}&generalSearchInput=${userInputParsed.search}&pageSize=20&fields=description,labelNutrients`)
+//     .then((response) => {
+
+//       const foods = response.data.foods
+//         .filter((food) => food.description && food.description.trim().length > 0)
+//         .reduce((uniqueFoods, food) => {
+//           const formattedDescription = food.description
+//             .toLowerCase()
+//             .replace(/\b\w/g, (l) => l.toUpperCase());
+//           if (
+//             !uniqueFoods.find(
+//               (uniqueFood) => uniqueFood.description === formattedDescription
+//             )
+//           ) {
+//             uniqueFoods.push({
+//               fdcId: food.fdcId,
+//               description: formattedDescription,
+//             });
+//           }
+//           return uniqueFoods;
+//         }, []);
+
+//       res.status(200).json({ result: foods });
+//     })
+//     .catch((error) => {
+//       console.log(error);
+//     });
+
+// })
+
+app.post('/query-nutritionix/:prompt', (req, res) => {
   const userInput = req.params.prompt;
   let userInputParsed = JSON.parse(decodeURIComponent(userInput));
   console.log(userInputParsed)
-
-  axios.get(`https://api.nal.usda.gov/fdc/v1/search?api_key=${process.env.USDA_API_KEY}&generalSearchInput=${userInputParsed.search}&pageSize=20&fields=description,labelNutrients`)
+  const appId = process.env.NUTRITIONIXAP_APP_ID;
+  const appKey = process.env.NUTRITIONIXAP_APP_KEY;
+  axios.get(`https://api.nutritionix.com/v1_1/search/${userInputParsed.search}?results=0:1&fields=item_name,brand_name,item_id,nf_calories,nf_protein,nf_total_fat,nf_saturated_fat,nf_cholesterol,nf_sodium,nf_total_carbohydrate,nf_dietary_fiber,nf_sugars,nf_iron_dv,nf_zinc_dv,nf_omega_3_dv,nf_vitamin_d_dv,nf_serving_weight_grams&appId=${appId}&appKey=${appKey}`)
     .then((response) => {
-      const foods = response.data.foods
-        .filter((food) => food.description && food.description.trim().length > 0)
+
+      const foods = response.data.hits
+        .filter((food) => food.fields.item_name && food.fields.item_name.trim().length > 0)
         .reduce((uniqueFoods, food) => {
-          const formattedDescription = food.description
-            .toLowerCase()
-            .replace(/\b\w/g, (l) => l.toUpperCase());
+          const formattedDescription = `${food.fields.item_name}`;
+
           if (
             !uniqueFoods.find(
               (uniqueFood) => uniqueFood.description === formattedDescription
             )
           ) {
             uniqueFoods.push({
-              fdcId: food.fdcId,
+              itemId: food.fields.item_id,
               description: formattedDescription,
             });
           }
@@ -103,8 +139,10 @@ app.post('/query-usda/:prompt', (req, res) => {
     .catch((error) => {
       console.log(error);
     });
+});
 
-})
+
+
 
 
 app.post(`/api/npc/:prompt`, async (req, res) => {
@@ -116,68 +154,95 @@ app.post(`/api/npc/:prompt`, async (req, res) => {
 
   if (!res.headersSent && userInputParsed.search.description != '') {
     console.log("# - STEP 2 MAIN")
-    async function main() {
-      let response;
-      let conversion;
+    const searchFood = async (foodItem) => {
+      const appId = process.env.NUTRITIONIXAP_APP_ID;
+      const appKey = process.env.NUTRITIONIXAP_APP_KEY;
+      const url = `https://api.nutritionix.com/v1_1/search/${foodItem}?results=0:1&fields=item_name,brand_name,item_id,nf_calories,nf_protein,nf_total_fat,nf_saturated_fat,nf_cholesterol,nf_sodium,nf_total_carbohydrate,nf_dietary_fiber,nf_sugars,nf_iron_dv,nf_zinc_dv,nf_omega_3_dv,nf_vitamin_d_dv,nf_serving_weight_grams&appId=${appId}&appKey=${appKey}`;
 
+      try {
+        const response = await axios.get(url);
+        const foodData = response.data.hits[0].fields;
+        console.log(response.data.hits[0])
+        return {
+          itemName: foodData.item_name,
+          brandName: foodData.brand_name,
+          nutrients: {
+            servingWeight: {
+              amount: foodData.nf_serving_weight_grams || '',
+              unit: 'g'
+            },
+            calories: {
+              amount: foodData.nf_calories || '',
+              unit: ''
+            },
+            protein: {
+              amount: foodData.nf_protein || '',
+              unit: 'g'
+            },
+            fat: {
+              amount: foodData.nf_total_fat || '',
+              unit: 'g'
+            },
+            carbohydrates: {
+              amount: foodData.nf_total_carbohydrate || '',
+              unit: 'g'
+            },
+            fiber: {
+              amount: foodData.nf_dietary_fiber || '',
+              unit: 'g'
+            },
+            sugar: {
+              amount: foodData.nf_sugars || '',
+              unit: 'g'
+            },
+            iron: {
+              amount: foodData.nf_iron_dv || '',
+              unit: '%'
+            },
+            zinc: {
+              amount: foodData.nf_zinc_dv || '',
+              unit: '%'
+            },
+            omega3: {
+              amount: foodData.nf_omega_3_dv || '',
+              unit: '%'
+            },
+            vitaminD: {
+              amount: foodData.nf_vitamin_d_dv || '',
+              unit: '%'
+            }
+          }
+        };
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
 
+    }
 
-      response = await getNutritionDetailsAndFoodGroup(userInputParsed);
-      console.log(response)
-      if (response.nutrition.calories.amount) {
-        let foodGroup;
-        if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
-          foodGroup = JSON.stringify(response.foodGroup.group);
-        } else {
-          foodGroup = ''
-        }
-        // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
-        conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
-        console.log("# - PRE-RES-STATUS:")
-        console.log(foodGroup)
-        // res.status(200).json({ result: conversion });
-        res.status(200).json({ result: { conversion: conversion, foodGroup: foodGroup } });
+    searchFood(userInputParsed.search.description).then(data => {
+      console.log("# - NUTRITIONIX")
+      console.log(data);
+      if (data) {
+        handleData(data)
       } else {
         res.status(200).json({ result: "not found" });
       }
 
 
 
+    });
 
-
-
-      // if (foodNutrients) {
-      //   console.log("# - FOOD ITEM EXISTS")
-      //   response = await handleIdentifyFoodGroup(userInputParsed)
-      //   console.log(response)
-      //   foodNutrients = JSON.parse(foodNutrients);
-      //   conversion = convertNutrition(foodNutrients, userInputParsed.quantity, userInputParsed.measurement);
-      //   res.status(200).json({ result: {conversion: conversion, foodGroup: response.foodGroup.group} });
-
-      // } else {
-      //   console.log("# - FOOD ITEM DOES NOT EXIST")
-      //   response = await getNutritionDetailsAndFoodGroup(userInputParsed);
-      //   console.log(response)
-      //   if (response.nutrition.calories.amount) {
-      //     let foodGroup;
-      //     if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
-      //       foodGroup = JSON.stringify(response.foodGroup.group);
-      //     } else {
-      //       foodGroup = ''
-      //     }
-      //     // await Mutation_Add_Food(userInputParsed.search.description, JSON.stringify(response.nutrition), foodGroup)
-      //     conversion = convertNutrition(response.nutrition, userInputParsed.quantity, userInputParsed.measurement);
-      //     console.log("# - PRE-RES-STATUS:")
-      //     console.log(foodGroup)
-      //     // res.status(200).json({ result: conversion });
-      //     res.status(200).json({ result: {conversion: conversion, foodGroup: foodGroup} });
-      //   } else {
-      //     res.status(200).json({ result: "not found" });
-      //   }
-      // }
-
+    const handleData = async (data) => {
+      response = await getNutritionDetailsAndFoodGroup(userInputParsed);
+      if (response.foodGroup && response.foodGroup.group && JSON.stringify(response.foodGroup.group)) {
+        foodGroup = JSON.stringify(response.foodGroup.group);
+      } else {
+        foodGroup = ''
+      }
+      res.status(200).json({ result: { conversion: data, foodGroup: foodGroup } });
     }
-    main();
+
   }
 
 });

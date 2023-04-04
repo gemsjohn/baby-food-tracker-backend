@@ -7,9 +7,11 @@ let apiKey = process.env.OPENAI_API_KEY;
 
 async function getNutritionDetailsAndFoodGroup(input) {
     console.log("# - getNutritionDetailsAndFoodGroup()")
-    const response = await generateInitialSceenDescription(input);
+    // const response = await generateInitialSceenDescription(input);
     const foodGroup = await generateFoodGroup(input);
-    return {nutrition: response, foodGroup: foodGroup};
+    // return {nutrition: response, foodGroup: foodGroup};
+    return {foodGroup: foodGroup};
+
 }
 
 async function handleIdentifyFoodGroup(input) {
