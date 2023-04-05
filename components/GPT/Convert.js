@@ -44,6 +44,8 @@ function convertNutrition(nutrition, desiredQuantity, desiredMeasurement, inDB) 
                 return (gramsPerMilliliter / (serving * weightInGrams))
             case "minutes":
                 return (gramsPerMinute / (serving * weightInGrams))
+            case "servings":
+                return 1
             default:
                 return 0;
         }
