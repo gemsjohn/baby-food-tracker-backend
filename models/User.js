@@ -36,7 +36,7 @@ const UserSchema = new Schema(
     },
     currentVersion: {
       type: String,
-      default: '1.1.2'
+      default: '1.1.3'
     },
     premium: Premium,
     subuser: [SubUser]
