@@ -11,6 +11,7 @@ const nodemailer = require("nodemailer");
 const Sequelize = require('sequelize');
 const GenerateCryptoRandomString = require('../CryptoRandomString');
 const { convertNutrition } = require('../components/GPT/Convert'); // ./components/GPT/Convert
+const { uppercase } = require('graphql-request/build/esm/helpers');
 
 const resolvers = {
   Query: {
@@ -277,6 +278,10 @@ const resolvers = {
     },
     addSubUserEntry: async (parent, args, context) => {
       console.log("# - addSubUserEntry CHECK 1")
+      function trimEndSpace(str) {
+        return str.replace(/\s+$/, '');
+      }
+
       const user = await User.findById({ _id: context.user._id })
       if (!user) {
         throw new ApolloError('User not found', 'AUTHENTICATION_FAILED')
@@ -284,7 +289,7 @@ const resolvers = {
       console.log("# - addSubUserEntry CHECK 2")
       console.log(args.item)
       let upperCaseItem = args.item.toUpperCase();
-      // console.log(args.nutrients)
+      upperCaseItem = trimEndSpace(upperCaseItem)
 
       let parsedNutrients = JSON.parse(args.nutrients)
       console.log(parsedNutrients)
@@ -409,11 +414,15 @@ const resolvers = {
           await user.save();
         }
       }
+
+      
+
       const food = await Food.findOne({ item: upperCaseItem })
       if (food) {
         console.log("# - " + upperCaseItem + " ALREADY EXISTS IN THE FOOD DB")
       } else {
         console.log("# - ADDING " + upperCaseItem + " TO THE FOOD DB")
+        
         const food = new Food({
           item: upperCaseItem,
           nutrients: parsedNutrients.nutrients,
