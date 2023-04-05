@@ -11,7 +11,6 @@ const nodemailer = require("nodemailer");
 const Sequelize = require('sequelize');
 const GenerateCryptoRandomString = require('../CryptoRandomString');
 const { convertNutrition } = require('../components/GPT/Convert'); // ./components/GPT/Convert
-const { uppercase } = require('graphql-request/build/esm/helpers');
 
 const resolvers = {
   Query: {
