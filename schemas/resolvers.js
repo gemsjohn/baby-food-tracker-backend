@@ -651,13 +651,13 @@ const resolvers = {
               </style>
             </head>
             <body>
-              <h1>WordLit Password Reset</h1>
+              <h1>Baby Food Tracker Password Reset</h1>
               <div class="message-box">
                 <p>
                 Dear ${user.username},
                 </p>
                 <p>
-                  We have received a request to reset your WordLit password. If you did not make this request, you can safely ignore this email.
+                  We have received a request to reset your password. If you did not make this request, you can safely ignore this email.
                 </p>
                 <p>
                   To reset your password, please copy the following reset token. The token will be invalid after 5 minutes.
@@ -669,8 +669,7 @@ const resolvers = {
                   Then, paste the token in the "reset token" box on WordLit.
                 </p>
                 <p>
-                  Best regards,<br>
-                  The WordLit Team
+                  Best regards!
                 </p>
               </div>
             </body>
