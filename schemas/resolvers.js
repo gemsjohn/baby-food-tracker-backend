@@ -791,36 +791,28 @@ const resolvers = {
         if (context.user._id == args.userid || context.user.role[0] == 'Admin') {
           console.log("# - deleteSubUser CHECK 4")
 
-          await User.findByIdAndUpdate(
-            { _id: args.userid },
-            {
-              subuser: []
-            },
-            { new: true }
-          );
+          for (let i = 0; i < user.subuser.length; i++) {
+            if (user.subuser[i]._id == args.subuserid) {
+              let subuser = user.subuser[i]
 
-          // for (let i = 0; i < user.subuser.length; i++) {
-          //   if (user.subuser[i]._id == args.subuserid) {
-          //     let subuser = user.subuser[i]
+              // for (let i = 0; i < subuser.tracker.length; i++) {
+              //   console.log("# - deleteSubUser CHECK 5 : " + i)
+              //   await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
+              // }
+              console.log("# - deleteSubUser CHECK 5")
+              console.log(subuser)
+              await User.findByIdAndUpdate(
+                { _id: args.userid },
+                {
+                  $pull: {
+                    subuser: subuser,
+                  },
+                },
+                { new: true }
+              );
 
-          //     // for (let i = 0; i < subuser.tracker.length; i++) {
-          //     //   console.log("# - deleteSubUser CHECK 5 : " + i)
-          //     //   await Tracker.findByIdAndDelete({ _id: subuser.tracker[i]._id })
-          //     // }
-          //     console.log("# - deleteSubUser CHECK 5")
-          //     console.log(subuser)
-          //     await User.findByIdAndUpdate(
-          //       { _id: args.userid },
-          //       {
-          //         $pull: {
-          //           subuser: subuser,
-          //         },
-          //       },
-          //       { new: true }
-          //     );
-
-          //   }
-          // }
+            }
+          }
 
 
         } else {
