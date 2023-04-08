@@ -982,6 +982,7 @@ const resolvers = {
       }
     },
     sendPDFContent: async (parent, { email, html }, context) => {
+      console.log("# - sendPDFContent")
       let lowerCaseEmail = email.toLowerCase();
       const username = `${process.env.SMTP_USERNAME}`
       const password = `${process.env.SMTP_PASSWORD}`
@@ -1003,7 +1004,7 @@ const resolvers = {
       const mailRes = await transport.sendMail({
         from: 'admin@honestpatina.com',
         to: lowerCaseEmail,
-        subject: "PDFGenerator",
+        subject: "Baby Food Tracker Data Export",
         html: html
       });
       console.log(mailRes)
