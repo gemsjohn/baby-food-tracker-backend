@@ -336,19 +336,19 @@ const resolvers = {
           unit: conversion.sugar ? conversion.sugar.unit : ''
         },
         iron: {
-          amount: conversion.iron ? conversion.iron.amount : 0,
+          amount: conversion.iron && conversion.iron.amount != null ? conversion.iron.amount : 0,
           unit: conversion.iron ? conversion.iron.unit : ''
         },
         zinc: {
-          amount: conversion.zinc ? conversion.zinc.amount : 0,
+          amount: conversion.zinc && conversion.zinc.amount != null ? conversion.zinc.amount : 0,
           unit: conversion.zinc ? conversion.zinc.unit : ''
         },
         omega3: {
-          amount: conversion.omega3 ? conversion.omega3.amount : 0,
+          amount: conversion.omega3 && conversion.omega3.amount != null ? conversion.omega3.amount : 0,
           unit: conversion.omega3 ? conversion.omega3.unit : ''
         },
         vitaminD: {
-          amount: conversion.vitaminD ? conversion.vitaminD.amount : 0,
+          amount: conversion.vitaminD && conversion.vitaminD.amount != null ? conversion.vitaminD.amount : 0,
           unit: conversion.vitaminD ? conversion.vitaminD.unit : ''
         },
       })
